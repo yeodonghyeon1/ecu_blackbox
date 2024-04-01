@@ -20,7 +20,7 @@ def startVideo(video_file, handleImg):
         while True:
             ret, video = cap.read()      # 다음 프레임 읽기      --- ②
             if ret:  
-                random_value += (random.randrange(-3, 3,3))
+                random_value += (random.randint(-3, 3))
                 
                 video = cv2.resize(video, (capW, capH), interpolation=cv2.INTER_CUBIC)# 프레임 읽기 정상
                 video = compositionImageToVideo(video, handleImg,random_value=random_value)
@@ -48,7 +48,7 @@ def compositionImageToVideo(video, handleImg, random_value):
 
     
     _, mask = cv2.threshold(handleImg[:,:,3] , 1 ,255, cv2.THRESH_BINARY)
-    print(mask.shape)
+    # print(mask.shape)
     mask_inv = cv2.bitwise_not(mask)
     roi = video[300:300+h , 100:100+w]
     handleImg = cv2.cvtColor(handleImg, cv2.COLOR_BGRA2BGR)
