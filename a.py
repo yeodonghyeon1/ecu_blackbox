@@ -1,7 +1,9 @@
-s
-print("abc")
-dgdfg
-dfkgsjdrlgrd
-dgdfg'asbsdbzdbzsdb
-zsdsbzsdb
-#sdfs
+
+
+
+def main():
+    pass
+    
+    
+if __name__ == "__main__":
+    main()
