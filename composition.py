@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import random
-
+import time
 
 
 # 동영상 파일 읽기
@@ -15,7 +15,7 @@ def startVideo(video_file, handleImg):
     # print("변환된 동영상 너비(가로) : {}, 높이(세로) : {}".format(w, h))
     
     random_value = 0
-
+    save_file = saveVideoWriter(cap, capW, capH)
     if cap.isOpened():                 # 캡쳐 객체 초기화 확인
         while True:
             ret, video = cap.read()      # 다음 프레임 읽기      --- ②
@@ -24,6 +24,7 @@ def startVideo(video_file, handleImg):
                 
                 video = cv2.resize(video, (capW, capH), interpolation=cv2.INTER_CUBIC)# 프레임 읽기 정상
                 video = compositionImageToVideo(video, handleImg,random_value=random_value)
+                save_file.write(video)
                 cv2.imshow(video_file, video) # 화면에 표시  --- ③
                 cv2.waitKey(30)            # 25ms 지연(40fps로 가정)   --- ④
             else:                       # 다음 프레임 읽을 수 없슴,
@@ -33,6 +34,17 @@ def startVideo(video_file, handleImg):
     cap.release()                       # 캡쳐 자원 반납
     cv2.destroyAllWindows()
 
+
+def saveVideoWriter(cap, capW, capH):
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    delay = round(1000/fps)
+    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    out = cv2.VideoWriter('./source/result.avi', fourcc, fps, (capW, capH))
+    return out
+    
+def CountTime():
+    curTime = time.time()
+    return curTime
 
 
 def compositionImageToVideo(video, handleImg, random_value):
@@ -45,8 +57,10 @@ def compositionImageToVideo(video, handleImg, random_value):
     
     M = cv2.getRotationMatrix2D((cX, cY), random_value, 1.0)
     handleImg = cv2.warpAffine(handleImg, M, (w, h))
+    curTime = CountTime()
+    cv2.putText(video, str(curTime), (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0))
 
-    
+
     _, mask = cv2.threshold(handleImg[:,:,3] , 1 ,255, cv2.THRESH_BINARY)
     # print(mask.shape)
     mask_inv = cv2.bitwise_not(mask)
