@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import random
 import time
-
+from can_network import canData
 
 # 동영상 파일 읽기
 def startVideo(video_file, handleImg):
