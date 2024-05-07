@@ -11,7 +11,7 @@ def startVideo(video_file, handleImg):
     file = 0
     while True:
         
-        cap = cv2.VideoCapture(f"../camera/{file}.mp4") # 동영상 캡쳐 객체 생성  ---①
+        cap = cv2.VideoCapture(f"../camera2/{file}.mp4") # 동영상 캡쳐 객체 생성  ---①
         capW = 640
         capH = 480
         # cap.set(cv2.CAP_PROP_FRAME_WIDTH, w/3) # 가로
@@ -37,9 +37,9 @@ def startVideo(video_file, handleImg):
                     cv2.waitKey(30)            # 25ms 지연(40fps로 가정)   --- ④
                 else:                       # 다음 프레임 읽을 수 없슴,
                     break                   # 재생 완료
+            #여기서 웹페이로 바로 전송
         else:
             print("can't open video.")      # 캡쳐 객체 초기화 실패
-            continue
         file += 1
     cap.release()                       # 캡쳐 자원 반납
     cv2.destroyAllWindows()
@@ -47,8 +47,8 @@ def startVideo(video_file, handleImg):
 
 def saveVideoWriter(cap, capW, capH, file):
     fps = cap.get(cv2.CAP_PROP_FPS)
-    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    out = cv2.VideoWriter(f"../camera/composit_{file}.mp4", fourcc, fps, (capW, capH))
+    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    out = cv2.VideoWriter(f"video/composit_{file}.mp4", fourcc, fps, (capW, capH))
     return out
 
 
@@ -58,19 +58,20 @@ def streamVideo():
     capH = 480
 
     # 여러가지의 코덱종류가 있지만 윈도우라면 DIVX 를 사용
+    # html로 띄울려면 코덱 avc1 써야함
     # fourcc = cv2.VideoWriter_fourcc('D','I','V','X')
-    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    cap = cv2.VideoCapture(0)               # 0번 카메라 장치 연결 ---①
+    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    cap = cv2.VideoCapture(0)               # 0번 카메라 장치 연결 ---①, 1번은 웹캠
 
     file = 0
     
     while True:
         count = 0
         while True:
-            if os.path.isfile(f"../camera/{file}.mp4"):
+            if os.path.isfile(f"../camera2/{file}.mp4"):
                 file += 1
             else:
-                out = cv2.VideoWriter(f"../camera/{str(file)}.mp4",fourcc,20.0,(capW, capH))
+                out = cv2.VideoWriter(f"../camera2/{str(file)}.mp4",fourcc,20.0,(capW, capH))
                 break
 
         if cap.isOpened():                      # 캡쳐 객체 연결 확인
@@ -81,7 +82,7 @@ def streamVideo():
                 count += 1           # 다음 프레임 읽기
                 if ret:
                     out.write(img)
-
+                    cv2.imshow("img", img)
                     cv2.waitKey(1)
                     if(count == 100):
                         break                  # 아무 키라도 입력이 있으면 중지
