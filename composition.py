@@ -40,6 +40,7 @@ def startVideo(video_file, handleImg):
             #여기서 웹페이로 바로 전송
         else:
             print("can't open video.")      # 캡쳐 객체 초기화 실패
+            continue
         file += 1
     cap.release()                       # 캡쳐 자원 반납
     cv2.destroyAllWindows()
