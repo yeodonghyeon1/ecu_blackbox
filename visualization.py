@@ -29,8 +29,8 @@ class Visual:
         cv2.rectangle(self.video, (10+int(self.capW/6)*4, board_value + 5), (int(self.capW/6)*5, self.capH-5), (r, g, b), -1)
         cv2.rectangle(self.video, (10+int(self.capW/6)*5, board_value + 5), (int(self.capW/6)*6, self.capH-5), (r, g, b), -1)
 
-    def handleImageToVideo(self, handleImg, random_value):
-        
+    def handleImageToVideo(self, random_value):
+        handleImg = cv2.imread("./source/handle.png", cv2.IMREAD_UNCHANGED)
         handleImg = cv2.resize(handleImg, (120, 120))
         
         h, w = handleImg.shape[:2]
