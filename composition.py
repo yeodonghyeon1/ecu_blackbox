@@ -14,11 +14,32 @@ def send_file(sock, filepath):#rase 1 ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
     # 파일 데이터 전송
     sock.sendall(file_data)
     # 파일 전송 종료 신호 전송
+    
     sock.sendall(b'--EOF--')# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
-def send_video(folder_path):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
           
-    while True:
+    if video_status == "org":
+        print("들어감")
+        for filename in os.listdir(folder_path):
+            if filename.endswith(".mp4"):
+                client_socket.sendall("LC".encode())
+                file_list = client_socket.recv(4096)  # 서버 응답 대기
+                print(file_list)
+                if file_list.decode().find(filename) != -1:
+                    continue
+                
+                if file_list.decode() == "NOT_FILE":
+                    filepath = os.path.join(folder_path, filename)
+                    client_socket.sendall(b"ORG" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+                    send_file(client_socket, filepath)
+                    print(f'{filename} 파일이 전송되었습니다.')
+                else:
+                    filepath = os.path.join(folder_path, filename)
+                    client_socket.sendall(b"ORG" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+                    send_file(client_socket, filepath)
+                    print(f'{filename} 파일이 전송되었습니다.')
+    else: 
         for filename in os.listdir(folder_path):
             if filename.endswith(".mp4"):
                 client_socket.sendall("LC".encode())
@@ -28,17 +49,15 @@ def send_video(folder_path):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ�
                     continue
                 if file_list.decode() == "NOT_FILE":
                     filepath = os.path.join(folder_path, filename)
-                    client_socket.sendall(filename.encode() + b'--EOF--')  # 파일 이름 전송
+                    client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
                     send_file(client_socket, filepath)
                     print(f'{filename} 파일이 전송되었습니다.')
                 else:
                     filepath = os.path.join(folder_path, filename)
-                    client_socket.sendall(filename.encode() + b'--EOF--')  # 파일 이름 전송
+                    client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
                     send_file(client_socket, filepath)
                     print(f'{filename} 파일이 전송되었습니다.')
-                    response = client_socket.recv(4096)  # 서버 응답 대기
-
-    client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+    response = client_socket.recv(4096)  # 서버 응답 대기
 
 # 동영상 파일 읽기
 def startVideo(video_file, handleImg):
@@ -129,11 +148,12 @@ def streamVideo():
                 else:
                     print('no frame')
                     #원본 
-                    send_video())
                     break
         else:
             print("can't open camera.")
             break
+        send_video(f"../camera2/","org")
+
         # 원본영상 2
         
         out.release()
@@ -153,5 +173,6 @@ if __name__ == "__main__":
     
     
     startVideo(driveVideo, handleImg)
+    client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 
