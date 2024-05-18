@@ -8,7 +8,12 @@ import os
 import threading
 import socket
 import datetime
+import pandas as pd
 
+def can_data_csv_read():
+    dataframe = pd.read_csv("source/can_data_2024-05-17_001.csv")
+    print(dataframe)
+    
 def send_file(sock, filepath):#rase 1 ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
     with open(filepath, 'rb') as f:
         file_data = f.read()
@@ -63,6 +68,9 @@ def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 # 실시간 스트리밍으로 합성 영상 저장 함수
 def startVideo():
     file = 0
+    
+    for file_path, file_dir, file_name in os.walk("../camera2"):
+        print(file_name)        
     while True:
         cap = cv2.VideoCapture(f"../camera2/{file}.mp4") # 동영상 캡쳐 객체 생성  ---①
         capW = 640
@@ -145,15 +153,13 @@ def streamVideo():
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
     cap = cv2.VideoCapture(0)               # 0번 카메라 장치 연결 ---①, 1번은 웹캠
     file = 0
-
     while True:
         count = 0
-        while True:
-            if os.path.isfile(f"../camera2/{file}.mp4"):
-                file += 1
-            else:
-                out = cv2.VideoWriter(f"../camera2/{str(file)}.mp4",fourcc,20.0,(capW, capH))
-                break
+        now = datetime.datetime.now()
+        now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
+
+        out = cv2.VideoWriter(f"../camera2/{str(file)}.mp4",fourcc,20.0,(capW, capH))
+  
         if cap.isOpened():                      # 캡쳐 객체 연결 확인
             while True:
                 print(count)
