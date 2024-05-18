@@ -10,7 +10,9 @@ import socket
 import datetime
 import pandas as pd
 
-def can_data_csv_read():
+
+def can_data_csv_read(root):
+    root = "source/can_data_2024-05-17_001.csv"
     dataframe = pd.read_csv("source/can_data_2024-05-17_001.csv")
     print(dataframe)
     
@@ -29,9 +31,8 @@ def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡ
         print("들어감")
         for filename in os.listdir(folder_path):
             if filename.endswith(".mp4"):
-                client_socket.sendall("LC".encode())
+                client_socket.sendall("LCA".encode())
                 file_list = client_socket.recv(4096)  # 서버 응답 대기
-                print(file_list)
                 if file_list.decode().find(filename) != -1:
                     continue
                 
@@ -48,9 +49,8 @@ def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡ
     else: 
         for filename in os.listdir(folder_path):
             if filename.endswith(".mp4"):
-                client_socket.sendall("LC".encode())
+                client_socket.sendall("LCB".encode())
                 file_list = client_socket.recv(4096)  # 서버 응답 대기
-                print(file_list)
                 if file_list.decode().find(filename) != -1:
                     continue
                 if file_list.decode() == "NOT_FILE":
@@ -67,36 +67,45 @@ def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 # 실시간 스트리밍으로 합성 영상 저장 함수
 def startVideo():
-    file = 0
-    
-    for file_path, file_dir, file_name in os.walk("../camera2"):
-        print(file_name)        
     while True:
-        cap = cv2.VideoCapture(f"../camera2/{file}.mp4") # 동영상 캡쳐 객체 생성  ---①
-        capW = 640
-        capH = 480
-        visual = Visual()
-        random_value = 0
-        save_file = saveVideoWriter(cap, capW, capH,file)
-        if cap.isOpened():                 # 캡쳐 객체 초기화 확인
-            while True:
-                ret, video = cap.read()      # 다음 프레임 읽기      --- ②
-                if ret: 
-                    visual.resize(capW, capH, video)
-                    random_value += (random.randint(-3, 3))
-                    visual.board_graphic(40, r= 128, g=128, b=128 )
-                    visual.handleImageToVideo(random_value=random_value)
-                    visual.CountTime()
-                    save_file.write(visual.video)
-                    cv2.imshow("video", visual.video) # 화면에 표시  --- ③
-                    cv2.waitKey(30)            # 25ms 지연(40fps로 가정)   --- ④
-                else:                       # 다음 프레임 읽을 수 없슴,
-                    break             # 재생 완료
-        else:
-            print("can't open video.")      # 캡쳐 객체 초기화 실패
-            continue
-        
-        file += 1
+        file_names = os.listdir("../camera/camera")
+        composit_file_names = os.listdir("../camera/composit")
+        for file_name in file_names:
+            if "composit_" + file_name in composit_file_names:
+                    continue
+            cap = cv2.VideoCapture(f"../camera/camera/{file_name}") # 동영상 캡쳐 객체 생성  ---①
+            if cap.read()[0] != False:
+                capW = 640
+                capH = 480
+                f = open(f"../camera/check_time_log/{file_name}.txt", 'w')
+                fps = 60
+                visual = Visual()
+                count = 0
+                random_value = 0
+                save_file = saveVideoWriter(cap, capW, capH,file_name)
+                if cap.isOpened(): 
+                    while True:
+                        ret, video = cap.read()      # 다음 프레임 읽기      --- ②
+                        count += 1
+                        if ret: 
+                            f.write(f"{count} {int(time.time())} \n")
+                            print(f"합성 중... {count}")
+                            visual.resize(capW, capH, video)
+                            random_value += (random.randint(-3, 3))
+                            visual.board_graphic(40, r= 128, g=128, b=128 )
+                            # visual.handleImageToVideo(random_value=random_value)
+                            visual.CountTime()
+                            save_file.write(visual.video)
+                            # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
+                            cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
+                        else:                       # 다음 프레임 읽을 수 없슴,
+                            break             # 재생 완료
+                    f.close()
+                    cap.release()
+                    send_video(f"../camera/composit/","CVV")
+                else:
+                    print("can't open video_composit.")      # 캡쳐 객체 초기화 실패
+
     # cap.release()                       # 캡쳐 자원 반납
     # cv2.destroyAllWindows()
 
@@ -128,7 +137,7 @@ def startVideo_old(video_file):
             else:                       # 다음 프레임 읽을 수 없슴,
                 break                   # 재생 완료
     else:
-        print("can't open video.")      # 캡쳐 객체 초기화 실패
+        print("can't open video_composit.")      # 캡쳐 객체 초기화 실패
     cap.release()                       # 캡쳐 자원 반납
     cv2.destroyAllWindows()
 
@@ -136,7 +145,7 @@ def startVideo_old(video_file):
 def saveVideoWriter(cap, capW, capH, file):
     fps = cap.get(cv2.CAP_PROP_FPS)
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    out = cv2.VideoWriter(f"video/composit_{file}.mp4", fourcc, fps, (capW, capH))
+    out = cv2.VideoWriter(f"../camera/composit/composit_{file}", fourcc, fps, (capW, capH))
     return out
 
 def saveVideoWriter_old(cap, capW, capH):
@@ -151,37 +160,41 @@ def streamVideo():
     capW = 640
     capH = 480
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    cap = cv2.VideoCapture(0)               # 0번 카메라 장치 연결 ---①, 1번은 웹캠
-    file = 0
+    cap = cv2.VideoCapture(0)              # 0번 카메라 장치 연결 ---①, 1번은 웹캠
+    duration = 30 #녹화 시간
+    fps = cap.get(cv2.CAP_PROP_FPS)
     while True:
         count = 0
         now = datetime.datetime.now()
-        now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
-
-        out = cv2.VideoWriter(f"../camera2/{str(file)}.mp4",fourcc,20.0,(capW, capH))
-  
-        if cap.isOpened():                      # 캡쳐 객체 연결 확인
+        now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
+        f = open(f"../camera/time_log/{now}.txt", 'w')
+        out = cv2.VideoWriter(f"../camera/camera/{now}.mp4",fourcc, fps,(capW, capH))
+        if cap.isOpened():
+            start_time = time.time()                   
             while True:
-                print(count)
+                # print(count)
                 ret, img = cap.read()
                 count += 1           # 다음 프레임 읽기
                 if ret:
+                    f.write(f"{count} {int(time.time())} \n")
                     out.write(img)
                     cv2.imshow("img", img)
                     cv2.waitKey(1)
-                    if(count == 100):
-                        break                  # 아무 키라도 입력이 있으면 중지
+                    if (time.time() - start_time) > duration:
+                        break
                 else:
                     print('no frame')
                     break
         else:
             print("can't open camera.")
             break
-        send_video(f"../camera2/","ORG")
+        f.close()
         out.release()
+        send_video(f"../camera/camera/","ORG")
+
 
 if __name__ == "__main__":
-    host = '192.168.0.80'
+    host = '192.168.0.107'
     port = 12345
                             
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -192,7 +205,7 @@ if __name__ == "__main__":
     thread.start()
     
     driveVideo = "./source/drive.mp4"
-    startVideo_old(driveVideo)
+    startVideo()
     # client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 
