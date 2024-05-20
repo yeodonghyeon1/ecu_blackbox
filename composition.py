@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import random
 import time
-from can_network import canData
+# from can_network import canData
 from visualization import Visual
 import os 
 import threading
@@ -93,7 +93,7 @@ def startVideo():
                             visual.resize(capW, capH, video)
                             random_value += (random.randint(-3, 3))
                             visual.board_graphic(40, r= 128, g=128, b=128 )
-                            # visual.handleImageToVideo(random_value=random_value)
+                            visual.handleImageToVideo(random_value=random_value)
                             visual.CountTime()
                             save_file.write(visual.video)
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
@@ -112,6 +112,7 @@ def startVideo():
 
 #합성 영상만 확인하는 함수
 def startVideo_old(video_file):
+    handleImg = cv2.imread("./source/handle.png", cv2.IMREAD_UNCHANGED)
     cap = cv2.VideoCapture(video_file) # 동영상 캡쳐 객체 생성  ---①
     capW = 640
     capH = 480
@@ -127,8 +128,8 @@ def startVideo_old(video_file):
             if ret:  
                 visual.resize(capW, capH, video)
                 random_value += (random.randint(-3, 3))
-                visual.board_graphic(40, r= 128, g=128, b=128 )
-                visual.handleImageToVideo(random_value=random_value)
+                visual.board_graphic(40, r= 250, g=240, b=230 )
+                visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
                 visual.CountTime()
 
                 save_file.write(visual.video)
@@ -197,15 +198,15 @@ if __name__ == "__main__":
     host = '192.168.0.107'
     port = 12345
                             
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((host, port))
+    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # client_socket.connect((host, port))
     
-    thread = threading.Thread(target=streamVideo)
-    thread.daemon = True
-    thread.start()
+    # thread = threading.Thread(target=streamVideo)
+    # thread.daemon = True
+    # thread.start()
     
     driveVideo = "./source/drive.mp4"
-    startVideo()
+    startVideo_old(driveVideo)
     # client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 
