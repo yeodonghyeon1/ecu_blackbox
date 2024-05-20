@@ -67,6 +67,8 @@ def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 # 실시간 스트리밍으로 합성 영상 저장 함수
 def startVideo():
+    handleImg = cv2.imread("./source/handle.png", cv2.IMREAD_UNCHANGED)
+
     while True:
         file_names = os.listdir("../camera/camera")
         composit_file_names = os.listdir("../camera/composit")
@@ -93,7 +95,7 @@ def startVideo():
                             visual.resize(capW, capH, video)
                             random_value += (random.randint(-3, 3))
                             visual.board_graphic(40, r= 128, g=128, b=128 )
-                            visual.handleImageToVideo(random_value=random_value)
+                            visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
                             visual.CountTime()
                             save_file.write(visual.video)
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
@@ -198,15 +200,15 @@ if __name__ == "__main__":
     host = '192.168.0.107'
     port = 12345
                             
-    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # client_socket.connect((host, port))
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((host, port))
     
-    # thread = threading.Thread(target=streamVideo)
-    # thread.daemon = True
-    # thread.start()
+    thread = threading.Thread(target=streamVideo)
+    thread.daemon = True
+    thread.start()
     
     driveVideo = "./source/drive.mp4"
-    startVideo_old(driveVideo)
+    startVideo()
     # client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 
