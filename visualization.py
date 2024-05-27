@@ -20,23 +20,24 @@ class Visual:
     def board_graphic(self, board_value, r,g,b):
         self.board_value = board_value
         board_value = self.capH - board_value
-        cv2.rectangle(self.video, (0, board_value), (self.capW, self.capH), (r, g, b), -1)
-        cv2.rectangle(self.video, (0, board_value+1), (self.capW, self.capH-1), (r+250, g+240, b+230), -1)
-        cv2.rectangle(self.video, (0, board_value+2), (self.capW, self.capH-2), (r+250, g+240, b+230), -1)
-        cv2.rectangle(self.video, (0, board_value+3), (self.capW, self.capH-3), (r+240, g+255, b+240), -1)
-        cv2.rectangle(self.video, (0, board_value+4), (self.capW, self.capH-4), (r+255, g+228, b+225), -1)
-        cv2.rectangle(self.video, (0, board_value+5), (self.capW, self.capH-5), (r+122, g+122, b+122), -1)
-        cv2.rectangle(self.video, (10, board_value + 5), (int(self.capW/4), self.capH-5), (r, g, b), -1)
-        self.board_text(3, int((10+int(self.capW/4))/2), 200,0,255,0)
+        # cv2.rectangle(self.video, (0, board_value), (self.capW, self.capH), (r, g, b), -1)
+        # cv2.rectangle(self.video, (0, board_value+1), (self.capW, self.capH-1), (r+250, g+240, b+230), -1)
+        # cv2.rectangle(self.video, (0, board_value+2), (self.capW, self.capH-2), (r+250, g+240, b+230), -1)
+        # cv2.rectangle(self.video, (0, board_value+3), (self.capW, self.capH-3), (r+240, g+255, b+240), -1)
+        # cv2.rectangle(self.video, (0, board_value+4), (self.capW, self.capH-4), (r+255, g+228, b+225), -1)
+        # cv2.rectangle(self.video, (0, board_value+5), (self.capW, self.capH-5), (r+122, g+122, b+122), -1)
+        # cv2.rectangle(self.video, (10, board_value + 5), (int(self.capW/4), self.capH-5), (r, g, b), -1)
+        
 
-        cv2.rectangle(self.video, (10+int(self.capW/4), board_value + 5), (int(self.capW/4)*2, self.capH-5), (r, g, b), -1)
-        cv2.rectangle(self.video, (10+int(self.capW/4)*2, board_value + 5), (int(self.capW/4) *3, self.capH-5), (240, 255, 240), -1)
-        cv2.rectangle(self.video, (10+int(self.capW/4)*3, board_value + 5), (int(self.capW/4)*4, self.capH-5), (240, 128, 128), -1)
+        # cv2.rectangle(self.video, (10+int(self.capW/4), board_value + 5), (int(self.capW/4)*2, self.capH-5), (r, g, b), -1)
+        # cv2.rectangle(self.video, (10+int(self.capW/4)*2, board_value + 5), (int(self.capW/4) *3, self.capH-5), (240, 255, 240), -1)
+        # cv2.rectangle(self.video, (10+int(self.capW/4)*3, board_value + 5), (int(self.capW/4)*4, self.capH-5), (240, 128, 128), -1)
         # cv2.rectangle(self.video, (10+int(self.capW/6)*4, board_value + 5), (int(self.capW/6)*5, self.capH-5), (r, g, b), -1)
         # cv2.rectangle(self.video, (10+int(self.capW/6)*5, board_value + 5), (int(self.capW/6)*6, self.capH-5), (r, g, b), -1)
-
+        self.board_text("break", int((0+int(self.capW/4))), board_value+30,0,255,0)
     def handleImageToVideo(self, random_value, handleImg):
         handleImg = cv2.resize(handleImg, (120, 120))
+        
         
         h, w = handleImg.shape[:2]
         (cX, cY) = (w // 2, h // 2)
