@@ -1,5 +1,8 @@
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 import random
 import time
 # from can_network import canData
@@ -97,6 +100,7 @@ def startVideo():
                             visual.board_graphic(40, r= 128, g=128, b=128 )
                             visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
                             visual.CountTime()
+                            visual.draw_graph(random_value)
                             save_file.write(visual.video)
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
                             cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
@@ -133,7 +137,7 @@ def startVideo_old(video_file):
                 visual.board_graphic(40, r= 250, g=240, b=230 )
                 visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
                 visual.CountTime()
-
+                visual.graph_show(visual.video, random_value)
                 save_file.write(visual.video)
                 cv2.imshow(video_file, visual.video) # 화면에 표시  --- ③
                 cv2.waitKey(30)            # 25ms 지연(40fps로 가정)   --- ④
@@ -195,20 +199,70 @@ def streamVideo():
         out.release()
         send_video(f"../camera/camera/","ORG")
 
+ # 그래프를 생성하는 함수
+# def draw_graph(data):
+#     fig = Figure(figsize=(5, 2), dpi=100)
+#     canvas = FigureCanvas(fig)
+#     ax = fig.add_subplot(111)
+#     ax.(1, "rpm")
+#     ax.plot(data, 'r-')
+#     ax.set_title('Real-time Graph')
+#     ax.set_xlabel('Frame')
+#     ax.set_ylabel('Brightness')
+#     ax.grid(True)
+
+#     canvas.draw()
+#     graph_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+#     graph_image = graph_image.reshape(canvas.get_width_height()[::-1] + (3,))
+    
+#     return graph_image
+
+# # 비디오 캡처 초기화
+# cap = cv2.VideoCapture(0)
+
+# # 그래프에 표시할 데이터
+# data = []
+
+# while True:
+#     ret, frame = cap.read()
+#     if not ret:
+#         break
+    
+#     # 임의의 데이터 추가 (여기서는 프레임의 밝기 평균값)
+#     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+#     avg_brightness = np.mean(gray)
+#     data.append(avg_brightness)
+    
+#     # 데이터의 길이를 제한
+#     if len(data) > 100:
+#         data.pop(0)
+    
+
+    
+#     # 화면에 표시
+#     cv2.imshow('Frame with Graph', frame)
+    
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
+#         break
+
+# cap.release()
+# cv2.destroyAllWindows()
+
+
 
 if __name__ == "__main__":
     host = '192.168.0.107'
     port = 12345
                             
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((host, port))
+    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # client_socket.connect((host, port))
     
-    thread = threading.Thread(target=streamVideo)
-    thread.daemon = True
-    thread.start()
+    # thread = threading.Thread(target=streamVideo)
+    # thread.daemon = True
+    # thread.start()
     
     driveVideo = "./source/drive.mp4"
-    startVideo()
+    startVideo_old(driveVideo)
     # client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 

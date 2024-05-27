@@ -1,6 +1,10 @@
 import cv2
 import time
 import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 
 class Visual:
@@ -21,12 +25,12 @@ class Visual:
         cv2.rectangle(self.video, (0, board_value+3), (self.capW, self.capH-3), (r+240, g+255, b+240), -1)
         cv2.rectangle(self.video, (0, board_value+4), (self.capW, self.capH-4), (r+255, g+228, b+225), -1)
         cv2.rectangle(self.video, (0, board_value+5), (self.capW, self.capH-5), (r+122, g+122, b+122), -1)
-        cv2.rectangle(self.video, (10, board_value + 5), (int(self.capW/6), self.capH-5), (r, g, b), -1)
-        self.board_text(3, int((10+int(self.capW/6))/2), 200,0,255,0)
+        cv2.rectangle(self.video, (10, board_value + 5), (int(self.capW/4), self.capH-5), (r, g, b), -1)
+        self.board_text(3, int((10+int(self.capW/4))/2), 200,0,255,0)
 
-        cv2.rectangle(self.video, (10+int(self.capW/6), board_value + 5), (int(self.capW/6)*2, self.capH-5), (r, g, b), -1)
-        cv2.rectangle(self.video, (10+int(self.capW/6)*2, board_value + 5), (int(self.capW/6) *3, self.capH-5), (240, 255, 240), -1)
-        cv2.rectangle(self.video, (10+int(self.capW/6)*3, board_value + 5), (int(self.capW/6)*4, self.capH-5), (240, 128, 128), -1)
+        cv2.rectangle(self.video, (10+int(self.capW/4), board_value + 5), (int(self.capW/4)*2, self.capH-5), (r, g, b), -1)
+        cv2.rectangle(self.video, (10+int(self.capW/4)*2, board_value + 5), (int(self.capW/4) *3, self.capH-5), (240, 255, 240), -1)
+        cv2.rectangle(self.video, (10+int(self.capW/4)*3, board_value + 5), (int(self.capW/4)*4, self.capH-5), (240, 128, 128), -1)
         # cv2.rectangle(self.video, (10+int(self.capW/6)*4, board_value + 5), (int(self.capW/6)*5, self.capH-5), (r, g, b), -1)
         # cv2.rectangle(self.video, (10+int(self.capW/6)*5, board_value + 5), (int(self.capW/6)*6, self.capH-5), (r, g, b), -1)
 
@@ -62,3 +66,47 @@ class Visual:
 
     def board_text(self, num, x,y,r,g,b):
         cv2.putText(self.video, str(num), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (r, g, b))
+
+    # 그래프를 생성하는 함수
+    def draw_graph(self, data):
+        
+        fig = Figure(figsize=(2, 2), dpi=100)
+        # fig = plt.figure()
+        canvas = FigureCanvas(fig)
+        ax = fig.add_subplot(111)
+        ax.set_ylim([0, 100])
+        ax.bar(1, data)
+        ax.set_xticks([])
+        # canvas = FigureCanvas(fig)
+        # ax = fig.add_subplot(111)
+        # ax.plot(data, 'r-')
+        ax.set_title('Real-time Graph')
+        ax.set_xlabel('RPM')
+        ax.set_ylabel('Brightness')
+        # ax.grid(True)
+
+        canvas.draw()
+        graph_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+        graph_image = graph_image.reshape(canvas.get_width_height()[::-1] + (3,))
+        
+        return graph_image
+    
+    def graph_show(self, frame , data):
+            # 그래프 이미지 생성
+        graph_image = self.draw_graph(data)
+        
+        # 그래프 이미지를 OpenCV BGR 포맷으로 변환
+        graph_image_bgr = cv2.cvtColor(graph_image, cv2.COLOR_RGB2BGR)
+        
+        # 그래프 이미지를 원본 프레임에 합성
+        graph_h, graph_w, _ = graph_image_bgr.shape
+        frame_h, frame_w, _ = frame.shape
+        
+        # 그래프 이미지가 프레임보다 크지 않도록 크기 조정
+        if graph_w > frame_w:
+            scale = frame_w / graph_w
+            graph_image_bgr = cv2.resize(graph_image_bgr, (frame_w, int(graph_h * scale)))
+            graph_h, graph_w, _ = graph_image_bgr.shape
+
+        # 프레임 위에 그래프 이미지 배치
+        frame[0:graph_h, 0:graph_w] = graph_image_bgr
