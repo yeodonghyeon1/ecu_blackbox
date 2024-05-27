@@ -18,6 +18,7 @@ class Visual:
         self.capH = capH
 
     def board_graphic(self, board_value, r,g,b):
+        self.board_value = board_value
         board_value = self.capH - board_value
         cv2.rectangle(self.video, (0, board_value), (self.capW, self.capH), (r, g, b), -1)
         cv2.rectangle(self.video, (0, board_value+1), (self.capW, self.capH-1), (r+250, g+240, b+230), -1)
@@ -71,24 +72,19 @@ class Visual:
     def draw_graph(self, data):
         
         fig = Figure(figsize=(2, 2), dpi=100)
-        # fig = plt.figure()
         canvas = FigureCanvas(fig)
+        fig.patch.set_alpha(1)
+
         ax = fig.add_subplot(111)
         ax.set_ylim([0, 100])
         ax.bar(1, data)
         ax.set_xticks([])
-        # canvas = FigureCanvas(fig)
-        # ax = fig.add_subplot(111)
-        # ax.plot(data, 'r-')
         ax.set_title('Real-time Graph')
         ax.set_xlabel('RPM')
         ax.set_ylabel('Brightness')
-        # ax.grid(True)
-
         canvas.draw()
         graph_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
         graph_image = graph_image.reshape(canvas.get_width_height()[::-1] + (3,))
-        
         return graph_image
     
     def graph_show(self, frame , data):
@@ -109,4 +105,4 @@ class Visual:
             graph_h, graph_w, _ = graph_image_bgr.shape
 
         # 프레임 위에 그래프 이미지 배치
-        frame[0:graph_h, 0:graph_w] = graph_image_bgr
+        frame[480-graph_h-self.board_value:graph_h+480-graph_h-self.board_value, 640-graph_w:graph_w+640-graph_w] = graph_image_bgr
