@@ -62,19 +62,25 @@ class Visual:
         self.video[300:300+h, 100:100+w] = added
     
     def borad_data(self, ecu_data, data_jump, time_jump):
+
+        #1 box
         print() if ecu_data[809.0].empty else self.board_text(list(ecu_data[809.0]["eng_temp"])[data_jump + time_jump],
                                                                 int((-140+int(self.capW/4))), 
                                                                 self.board_value2+30, 0,255,0)
-        
-        print() if ecu_data[1087.0].empty else self.board_text(list(ecu_data[1087.0]["CUR_GR"])[data_jump + time_jump],
-                                                                    int((340+int(self.capW/4))), 
-                                                                    self.board_value2+30, 0,255,0)
+        #2 box
         print() if ecu_data[544.0].empty else self.board_text(list(ecu_data[544.0]["break_PRES"])[data_jump + time_jump],
                                                                 int((170+int(self.capW/4))), 
                                                                 self.board_value2+30, 0,255,0)
+        #3 box
         print() if ecu_data[809.0].empty else self.board_text(list(ecu_data[809.0]["PV_AC_CAN"])[data_jump + time_jump],
                                                                 int((10+int(self.capW/4))), 
                                                                 self.board_value2+30, 0,255,0)
+        #4 box
+        print() if ecu_data[1087.0].empty else self.board_text(list(ecu_data[1087.0]["CUR_GR"])[data_jump + time_jump],
+                                                                    int((340+int(self.capW/4))), 
+                                                                    self.board_value2+30, 0,255,0)
+
+
         
     def CountTime(self):
         now = datetime.datetime.now()

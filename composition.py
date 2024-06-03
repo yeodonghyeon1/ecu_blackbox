@@ -14,6 +14,7 @@ import datetime
 import pandas as pd
 import re
 from pi.can import can_net
+import atexit
 
 def can_data_csv_read(filename):
     filename = filename.replace(".mp4", "")
@@ -211,6 +212,8 @@ def startVideo():
             if "composit_" + file_name in composit_file_names:
                     continue
             cap = cv2.VideoCapture(f"../camera/camera/{file_name}") # 동영상 캡쳐 객체 생성  ---①
+            print("Aaaaaaaaaaa", file_name)
+
             if cap.read()[0] != False:
                 capW = 640
                 capH = 480
@@ -222,64 +225,50 @@ def startVideo():
                 data_jump = 0 
                 save_file = saveVideoWriter(cap, capW, capH, file_name)
                 if cap.isOpened():
-                    try:    
-                        ecu_dataframe, unique_id = can_data_csv_read(file_name)
-                        camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
-                        reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
-                    except:
-                        continue
+                    # try:    
+                    #     ecu_dataframe, unique_id = can_data_csv_read(file_name)
+                    #     camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
+                    #     reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
+                    # except:
+                    #     continue
                     while True:
                         ret, video = cap.read()      # 다음 프레임 읽기      --- ②
                         count += 1
                         print(ret)
                         if ret:
-                            ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
+                            # ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
                             print(f"합성 중... {count}")
                             # print(ecu_data)
-                            if camera_1sec_frame_sum == count:
-                                data_jump = 0
-                                count = 0
-                                i += 1
-                            # print(ecu_data)
-                            # # print(frame_ecu_data)
-                            # if not frame_ecu_data == False:
-                            #     for id in unique_id:
-                            #         # print(frame_ecu_data)
-                            #         print(frame_ecu_data[id].loc[data_jump + frame_time_jump])
+                            # if camera_1sec_frame_sum == count:
+                            #     data_jump = 0
+                            #     count = 0
+                            #     i += 1
                             visual.resize(capW, capH, video)
                             random_value += (random.randint(-3, 3))
                             visual.board_graphic(40, r= 250, g=240, b=230 )
-                            visual.borad_data(ecu_data, data_jump, time_jump)
-                            # print() if ecu_data[790.0].empty else visual.board_text("one", 100, 100,0,255,0)
-
-
-                            # visual.board_text("eng", int((-140+int(visual.capW/4))), visual.board_value2+30, 0,255,0)
-                            # visual.board_text("axcel", int((10+int(visual.capW/4))), visual.board_value2+30, 0,255,0)
-                            # visual.board_text("press", int((170+int(visual.capW/4))), visual.board_value2+30, 0,255,0)
-                            # visual.board_text("gear", int((340+int(visual.capW/4))), visual.board_value2+30, 0,255,0)
-
-                            visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
-                            visual.CountTime()
-                            print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
+                            # visual.borad_data(ecu_data, data_jump, time_jump)
+                            # visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
+                            # visual.CountTime()
+                            # print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
                             save_file.write(visual.video)
-                            visual.board_text("one", 100,100,0,255,0)
-                            data_jump = data_jump + time_jump
-                            print("data jump + time jump" , data_jump, time_jump)
+                            # visual.board_text("one", 100,100,0,255,0)
+                            # data_jump = data_jump + time_jump
+                            # print("data jump + time jump" , data_jump, time_jump)
 
 
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
                             cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
                         else:                       # 다음 프레임 읽을 수 없슴,
+                            cap.release()
+                            send_video_version2(f"../camera/composit/","CVV")
                             break             # 재생 완료
                     print("continue")
                 else:
                     print("can't open video_composit.")      # 캡쳐 객체 초기화 실패
-            cap.release()
-            send_video_version2(f"../camera/composit/","CVV")
+
             # thread = threading.Thread(target=send_video_version2(f"../camera/composit/","CVV"))
             # thread.daemon = True
             # thread.start()
-            break
 
             
 
@@ -344,23 +333,23 @@ def streamVideo():
     capH = 480
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
     cap = cv2.VideoCapture(0)              # 0번 카메라 장치 연결 ---①, 1번은 웹캠
-    duration = 10 #녹화 시간
+    duration = 30 #녹화 시간
     fps = cap.get(cv2.CAP_PROP_FPS)
     a = 0
     while True:
         count = 0
         count_list = []
         time_list = []
-        temp = time.time() - 1717054130
-        if a == 0:
-            timestamp = 1717054130
-            # timestamp를 이용해 datetime 객체를 생성합니다.
-            now = datetime.datetime.fromtimestamp(timestamp)
-            now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
-            a += 1
-        else:
-            now = datetime.datetime.now()
-            now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
+        # temp = time.time() - 1717054130
+        # if a == 0:
+        #     timestamp = 1717054130
+        #     # timestamp를 이용해 datetime 객체를 생성합니다.
+        #     now = datetime.datetime.fromtimestamp(timestamp)
+        #     now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
+        #     a += 1
+        # else:
+        now = datetime.datetime.now()
+        now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
         out = cv2.VideoWriter(f"../camera/camera/{now}.mp4",fourcc, fps,(capW, capH))
         if cap.isOpened():
             print(now)
@@ -372,7 +361,9 @@ def streamVideo():
                 if ret:
                     print(count)
                     count_list.append(count)
-                    time_list.append(int(time.time())- temp)
+                    # time_list.append(int(time.time())- temp)
+                    time_list.append(int(time.time()))
+
                     out.write(img)
                     # cv2.imshow("img", img)
                     cv2.waitKey(1)
@@ -392,55 +383,8 @@ def streamVideo():
         # thread.daemon = True
         # thread.start()
 
- # 그래프를 생성하는 함수
-# def draw_graph(data):
-#     fig = Figure(figsize=(5, 2), dpi=100)
-#     canvas = FigureCanvas(fig)
-#     ax = fig.add_subplot(111)
-#     ax.(1, "rpm")
-#     ax.plot(data, 'r-')
-#     ax.set_title('Real-time Graph')
-#     ax.set_xlabel('Frame')
-#     ax.set_ylabel('Brightness')
-#     ax.grid(True)
-
-#     canvas.draw()
-#     graph_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
-#     graph_image = graph_image.reshape(canvas.get_width_height()[::-1] + (3,))
-    
-#     return graph_image
-
-# # 비디오 캡처 초기화
-# cap = cv2.VideoCapture(0)
-
-# # 그래프에 표시할 데이터
-# data = []
-
-# while True:
-#     ret, frame = cap.read()
-#     if not ret:
-#         break
-    
-#     # 임의의 데이터 추가 (여기서는 프레임의 밝기 평균값)
-#     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-#     avg_brightness = np.mean(gray)
-#     data.append(avg_brightness)
-    
-#     # 데이터의 길이를 제한
-#     if len(data) > 100:
-#         data.pop(0)
-    
-
-    
-#     # 화면에 표시
-#     cv2.imshow('Frame with Graph', frame)
-    
-#     if cv2.waitKey(1) & 0xFF == ord('q'):
-#         break
-
-# cap.release()
-# cv2.destroyAllWindows()
-
+def handle_exit(client_socket):
+    client_socket.sendall(b"END")
 
 
 if __name__ == "__main__":
@@ -450,13 +394,15 @@ if __name__ == "__main__":
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((host, port))
     
+    atexit.register(handle_exit, client_socket)
+
     thread = threading.Thread(target=streamVideo)
     thread.daemon = True
     thread.start()
     
-    # thread2 = threading.Thread(target=can_net)
-    # thread2.daemon = True
-    # thread2.start()
+    thread2 = threading.Thread(target=can_net)
+    thread2.daemon = True
+    thread2.start()
     
     driveVideo = "./source/drive.mp4"
     # startVideo_old(driveVideo)
