@@ -15,6 +15,9 @@ import pandas as pd
 import re
 from pi.can import can_net
 import atexit
+import time
+from unittest.mock import patch
+
 
 def can_data_csv_read(filename):
     filename = filename.replace(".mp4", "")
@@ -212,7 +215,6 @@ def startVideo():
             if "composit_" + file_name in composit_file_names:
                     continue
             cap = cv2.VideoCapture(f"../camera/camera/{file_name}") # 동영상 캡쳐 객체 생성  ---①
-            print("Aaaaaaaaaaa", file_name)
 
             if cap.read()[0] != False:
                 capW = 640
@@ -225,35 +227,35 @@ def startVideo():
                 data_jump = 0 
                 save_file = saveVideoWriter(cap, capW, capH, file_name)
                 if cap.isOpened():
-                    # try:    
-                    #     ecu_dataframe, unique_id = can_data_csv_read(file_name)
-                    #     camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
-                    #     reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
-                    # except:
-                    #     continue
+                    try:    
+                        ecu_dataframe, unique_id = can_data_csv_read(file_name)
+                        camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
+                        reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
+                    except:
+                        continue
                     while True:
                         ret, video = cap.read()      # 다음 프레임 읽기      --- ②
                         count += 1
                         print(ret)
                         if ret:
-                            # ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
+                            ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
                             print(f"합성 중... {count}")
-                            # print(ecu_data)
-                            # if camera_1sec_frame_sum == count:
-                            #     data_jump = 0
-                            #     count = 0
-                            #     i += 1
+                            print(ecu_data)
+                            if camera_1sec_frame_sum == count:
+                                data_jump = 0
+                                count = 0
+                                i += 1
                             visual.resize(capW, capH, video)
                             random_value += (random.randint(-3, 3))
                             visual.board_graphic(40, r= 250, g=240, b=230 )
-                            # visual.borad_data(ecu_data, data_jump, time_jump)
-                            # visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
-                            # visual.CountTime()
-                            # print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
+                            visual.borad_data(ecu_data, data_jump, time_jump)
+                            visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
+                            visual.CountTime()
+                            print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
                             save_file.write(visual.video)
-                            # visual.board_text("one", 100,100,0,255,0)
-                            # data_jump = data_jump + time_jump
-                            # print("data jump + time jump" , data_jump, time_jump)
+                            visual.board_text("one", 100,100,0,255,0)
+                            data_jump = data_jump + time_jump
+                            print("data jump + time jump" , data_jump, time_jump)
 
 
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
@@ -320,8 +322,6 @@ def saveVideoWriter_old(cap, capW, capH):
     out = cv2.VideoWriter('./source/result.avi', fourcc, fps, (capW, capH))
     return out
 
-import time
-from unittest.mock import patch
 
 def mock_time():
     return 1717054130
@@ -355,7 +355,6 @@ def streamVideo():
             print(now)
             start_time = time.time()                   
             while True:
-                # prin  t(count)
                 ret, img = cap.read()
                 count += 1           # 다음 프레임 읽기
                 if ret:
