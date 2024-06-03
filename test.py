@@ -127,8 +127,10 @@ for id in unique_id:
         reduction_dataframe[id] = full_dataframe[full_dataframe["ID"]== id][['ID', 'time',"VS","RPM"]]
     elif id == 688.0:
         reduction_dataframe[id] = full_dataframe[full_dataframe["ID"]== id][['ID', 'time',"s_angle","s_speed"]]
-print(full_dataframe)
-# print(reduction_dataframe)
+# print(full_dataframe["break_PRES"]) 
+# print(reduction_dataframe[22])
+
+print() if reduction_dataframe[790.0].empty else print(list(reduction_dataframe[790.0]["RPM"])[0])
 # print(type(unique_id[0]))
 # for id in unique_id:
 #     print(id)

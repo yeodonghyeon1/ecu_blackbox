@@ -92,6 +92,8 @@ def data_synchronization(dataframe, camera_dict, unique_id, i):
             ecu_data[id] = dataframe[id][(dataframe[id]['time'] == float(list(camera_dict.keys())[i])) & (dataframe[id]["ID"] == id)]
         camera_frame_sum = camera_dict[list(camera_dict.keys())[i]]
         frame_time_jump = int(len(ecu_data[unique_id[0]][list(ecu_data[unique_id[0]].keys())[0]]) / camera_frame_sum)
+        if frame_time_jump == 0:
+            frame_time_jump = 1
         return ecu_data, camera_frame_sum, frame_time_jump
 
 def send_file(sock, filepath):#rase 1 ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
@@ -232,13 +234,13 @@ def startVideo():
                         print(ret)
                         if ret:
                             ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
-
                             print(f"합성 중... {count}")
-                            
                             # print(ecu_data)
                             if camera_1sec_frame_sum == count:
+                                data_jump = 0
                                 count = 0
                                 i += 1
+                            # print(ecu_data)
                             # # print(frame_ecu_data)
                             # if not frame_ecu_data == False:
                             #     for id in unique_id:
@@ -251,6 +253,11 @@ def startVideo():
                             visual.CountTime()
                             visual.draw_graph(random_value)
                             save_file.write(visual.video)
+                            visual.board_text("one", 100,100,0,255,0)
+                            data_jump = data_jump + time_jump
+                            print("data jump + time jump" , data_jump, time_jump)
+                            print() if ecu_data[790.0].empty else print(list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
+                            print() if ecu_data[790.0].empty else visual.board_text("one", 100,100,0,255,0)
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
                             cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
                         else:                       # 다음 프레임 읽을 수 없슴,
