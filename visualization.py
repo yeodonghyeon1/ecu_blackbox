@@ -20,6 +20,7 @@ class Visual:
     def board_graphic(self, board_value, r,g,b):
         self.board_value = board_value
         board_value = self.capH - board_value
+        self.board_value2 = board_value
         cv2.rectangle(self.video, (0, board_value), (self.capW, self.capH), (r, g, b), -1)
         cv2.rectangle(self.video, (0, board_value+1), (self.capW, self.capH-1), (r+240, g+255, b+240), -1)
         cv2.rectangle(self.video, (0, board_value+2), (self.capW, self.capH-2), (r+240, g+255, b+240), -1)
@@ -34,10 +35,10 @@ class Visual:
         cv2.rectangle(self.video, (10+int(self.capW/4)*3, board_value + 5), (int(self.capW/4)*4, self.capH-5), (240, 255, 240), -1)
         # cv2.rectangle(self.video, (10+int(self.capW/6)*4, board_value + 5), (int(self.capW/6)*5, self.capH-5), (r, g, b), -1)
         # cv2.rectangle(self.video, (10+int(self.capW/6)*5, board_value + 5), (int(self.capW/6)*6, self.capH-5), (r, g, b), -1)
-        self.board_text("eng", int((-140+int(self.capW/4))), board_value+30, 0,255,0)
-        self.board_text("axcel", int((10+int(self.capW/4))), board_value+30, 0,255,0)
-        self.board_text("press", int((170+int(self.capW/4))), board_value+30, 0,255,0)
-        self.board_text("gear", int((340+int(self.capW/4))), board_value+30, 0,255,0)
+        # self.board_text("eng", int((-140+int(self.capW/4))), board_value+30, 0,255,0)
+        # self.board_text("axcel", int((10+int(self.capW/4))), board_value+30, 0,255,0)
+        # self.board_text("press", int((170+int(self.capW/4))), board_value+30, 0,255,0)
+        # self.board_text("gear", int((340+int(self.capW/4))), board_value+30, 0,255,0)
     def handleImageToVideo(self, random_value, handleImg):
         handleImg = cv2.resize(handleImg, (120, 120))
         
@@ -59,8 +60,22 @@ class Visual:
         
         added = masked_img + masked_video
         self.video[300:300+h, 100:100+w] = added
+    
+    def borad_data(self, ecu_data, data_jump, time_jump):
+        print() if ecu_data[809.0].empty else self.board_text(list(ecu_data[809.0]["eng_temp"])[data_jump + time_jump],
+                                                                int((-140+int(self.capW/4))), 
+                                                                self.board_value2+30, 0,255,0)
         
-
+        print() if ecu_data[1087.0].empty else self.board_text(list(ecu_data[1087.0]["CUR_GR"])[data_jump + time_jump],
+                                                                    int((340+int(self.capW/4))), 
+                                                                    self.board_value2+30, 0,255,0)
+        print() if ecu_data[544.0].empty else self.board_text(list(ecu_data[544.0]["break_PRES"])[data_jump + time_jump],
+                                                                int((170+int(self.capW/4))), 
+                                                                self.board_value2+30, 0,255,0)
+        print() if ecu_data[809.0].empty else self.board_text(list(ecu_data[809.0]["PV_AC_CAN"])[data_jump + time_jump],
+                                                                int((10+int(self.capW/4))), 
+                                                                self.board_value2+30, 0,255,0)
+        
     def CountTime(self):
         now = datetime.datetime.now()
         now2 = datetime.datetime.now()
@@ -80,7 +95,7 @@ class Visual:
         fig.patch.set_alpha(1)
 
         ax = fig.add_subplot(111)
-        ax.set_ylim([0, 100])
+        ax.set_ylim([0, 1500])
         ax.bar(1, data)
         ax.set_xticks([])
         ax.set_title('Real-time Graph')

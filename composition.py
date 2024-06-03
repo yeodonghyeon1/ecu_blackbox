@@ -222,7 +222,7 @@ def startVideo():
                 data_jump = 0 
                 save_file = saveVideoWriter(cap, capW, capH, file_name)
                 if cap.isOpened():
-                    try:
+                    try:    
                         ecu_dataframe, unique_id = can_data_csv_read(file_name)
                         camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
                         reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
@@ -248,16 +248,25 @@ def startVideo():
                             #         print(frame_ecu_data[id].loc[data_jump + frame_time_jump])
                             visual.resize(capW, capH, video)
                             random_value += (random.randint(-3, 3))
-                            visual.board_graphic(40, r= 128, g=128, b=128 )
+                            visual.board_graphic(40, r= 250, g=240, b=230 )
+                            visual.borad_data(ecu_data, data_jump, time_jump)
+                            # print() if ecu_data[790.0].empty else visual.board_text("one", 100, 100,0,255,0)
+
+
+                            # visual.board_text("eng", int((-140+int(visual.capW/4))), visual.board_value2+30, 0,255,0)
+                            # visual.board_text("axcel", int((10+int(visual.capW/4))), visual.board_value2+30, 0,255,0)
+                            # visual.board_text("press", int((170+int(visual.capW/4))), visual.board_value2+30, 0,255,0)
+                            # visual.board_text("gear", int((340+int(visual.capW/4))), visual.board_value2+30, 0,255,0)
+
                             visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
                             visual.CountTime()
-                            visual.draw_graph(random_value)
+                            print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
                             save_file.write(visual.video)
                             visual.board_text("one", 100,100,0,255,0)
                             data_jump = data_jump + time_jump
                             print("data jump + time jump" , data_jump, time_jump)
-                            print() if ecu_data[790.0].empty else print(list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
-                            print() if ecu_data[790.0].empty else visual.board_text("one", 100,100,0,255,0)
+
+
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
                             cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
                         else:                       # 다음 프레임 읽을 수 없슴,
