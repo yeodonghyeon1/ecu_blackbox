@@ -12,66 +12,198 @@ import threading
 import socket
 import datetime
 import pandas as pd
+import re
+from pi.can import can_net
 
+def can_data_csv_read(filename):
+    filename = filename.replace(".mp4", "")
+    file_pattern = re.compile(r'(\d{4})y_(\d{2})m_(\d{2})d_(\d{2})h_(\d{2})m_(\d{2})s')
+    match = file_pattern.match(filename)
 
-def can_data_csv_read(root):
-    root = "source/can_data_2024-05-17_001.csv"
-    dataframe = pd.read_csv("source/can_data_2024-05-17_001.csv")
-    print(dataframe)
+    year, month, day, hour, minute, second = map(int, match.groups())
+
+    file_time = datetime.datetime(year, month, day, hour, minute, second)
+
+    one_minute = datetime.timedelta(minutes=1)
+    times_to_check = [
+        (file_time - one_minute).strftime("%Yy_%mm_%dd_%Hh_%Mm"),
+        file_time.strftime("%Yy_%mm_%dd_%Hh_%Mm"),
+        (file_time + one_minute).strftime("%Yy_%mm_%dd_%Hh_%Mm")
+    ]
     
+    target_files = []
+
+    # 폴더 내 파일들에 대해 반복
+    for filename in os.listdir("../camera/csv"):
+        for time_str in times_to_check:
+            if filename.startswith(time_str) and filename.endswith('.csv'):
+                target_files.append(filename)
+                
+    dataframe = []
+    for count, value in enumerate(target_files):
+        df = pd.read_csv("../camera/csv/{}".format(value))
+        df['time'] = df['time'].astype(int)
+        df['time'] = df['time'].astype(float)
+        dataframe.append(df)
+
+    full_dataframe = dataframe[0]
+
+    for count, value in enumerate(dataframe):
+        if count == 0:
+            continue
+        full_dataframe = pd.concat([full_dataframe, value])
+    unique_id = full_dataframe["ID"].unique()
+    return full_dataframe, unique_id
+
+def time_log_csv(frame_log):
+    frame_log['time'] = frame_log['time'].astype(int)
+    frame_log['time'] = frame_log['time'].astype(float)
+    start_time = frame_log.loc[0]['time']
+    i = 0
+    frame_for_sec = []
+    dict = {}
+    while True:
+        frame_for_sec.append(len(frame_log[frame_log['time'] == int(start_time) + i]))
+        dict[(start_time) + i] = frame_for_sec[i]
+        i += 1
+
+        if(len(frame_log[frame_log['time'] == int(start_time) + i]) == 0):
+            break
+
+    return dict
+def data_reduction(ecu_dataframe, unique_id):
+    reduction_dataframe ={}
+    for id in unique_id:
+        if id == 1087.0:
+            reduction_dataframe[id] = ecu_dataframe[ecu_dataframe["ID"]== id][['ID', 'time',"CUR_GR"]]
+        elif id == 809.0:
+            reduction_dataframe[id] = ecu_dataframe[ecu_dataframe["ID"]== id][['ID', 'time',"eng_temp","break_on_off","TPS","PV_AC_CAN","CONF_TCU"]]
+        elif id == 544.0:
+            reduction_dataframe[id] = ecu_dataframe[ecu_dataframe["ID"]== id][['ID', 'time',"break_PRES"]]
+        elif id == 790.0:
+            reduction_dataframe[id] = ecu_dataframe[ecu_dataframe["ID"]== id][['ID', 'time',"VS","RPM"]]
+        elif id == 688.0:
+            reduction_dataframe[id] = ecu_dataframe[ecu_dataframe["ID"]== id][['ID', 'time',"s_angle","s_speed"]]
+    return reduction_dataframe
+
+def data_synchronization(dataframe, camera_dict, unique_id, i):
+        ecu_data = {}
+        for id in unique_id:
+            ecu_data[id] = dataframe[id][(dataframe[id]['time'] == float(list(camera_dict.keys())[i])) & (dataframe[id]["ID"] == id)]
+        camera_frame_sum = camera_dict[list(camera_dict.keys())[i]]
+        frame_time_jump = int(len(ecu_data[unique_id[0]][list(ecu_data[unique_id[0]].keys())[0]]) / camera_frame_sum)
+        if frame_time_jump == 0:
+            frame_time_jump = 1
+        return ecu_data, camera_frame_sum, frame_time_jump
+
 def send_file(sock, filepath):#rase 1 ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
     with open(filepath, 'rb') as f:
         file_data = f.read()
     # 파일 데이터 전송
-    sock.sendall(file_data)
+    sock.sendall(file_data + b'--EOF--')
     # 파일 전송 종료 신호 전송
     
-    sock.sendall(b'--EOF--')# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+    # sock.sendall(b'--EOF--')# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
-def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
-          
+
+#send_video_version_2 
+
+def send_video_version2(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+    print(video_status)
+    plus = 0.2
     if video_status == "ORG":
-        print("들어감")
+        file_list = ""
+        server_request = 0
+        client_socket.sendall("LCA".encode())
+        file_list = client_socket.recv(4096)  # 서버 응답 대기
         for filename in os.listdir(folder_path):
             if filename.endswith(".mp4"):
-                client_socket.sendall("LCA".encode())
-                file_list = client_socket.recv(4096)  # 서버 응답 대기
-                if file_list.decode().find(filename) != -1:
-                    continue
-                
-                if file_list.decode() == "NOT_FILE":
-                    filepath = os.path.join(folder_path, filename)
-                    client_socket.sendall(b"ORG" + filename.encode() + b'--EOF--')  # 파일 이름 전송
-                    send_file(client_socket, filepath)
-                    print(f'{filename} 파일이 전송되었습니다.')
-                else:
-                    filepath = os.path.join(folder_path, filename)
-                    client_socket.sendall(b"ORG" + filename.encode() + b'--EOF--')  # 파일 이름 전송
-                    send_file(client_socket, filepath)
-                    print(f'{filename} 파일이 전송되었습니다.')
-    else: 
+                if file_list.decode().find("LCA") != -1:
+                    if file_list.decode().find(filename) != -1:
+                        continue      
+                    if file_list.decode() == "LCA NOT_FILE":
+                        filepath = os.path.join(folder_path, filename)
+                        print("ORG", filename, "--EOF--")
+                        client_socket.sendall(b"ORG" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+                        send_file(client_socket, filepath)
+                        # print(f'{filename} 파일이 전송되었습니다.')
+                    else:
+                        filepath = os.path.join(folder_path, filename)
+                        print("ORG", filename, "--EOF--")
+                        client_socket.sendall(b"ORG" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+                        send_file(client_socket, filepath)
+                        # print(f'{filename} 파일이 전송되었습니다.')
+    elif video_status == "CVV":
+        file_list = ""
+        server_request = 0
+        client_socket.sendall("LCA".encode())
+        file_list = client_socket.recv(4096)  # 서버 응답 대기
         for filename in os.listdir(folder_path):
             if filename.endswith(".mp4"):
-                client_socket.sendall("LCB".encode())
-                file_list = client_socket.recv(4096)  # 서버 응답 대기
-                if file_list.decode().find(filename) != -1:
-                    continue
-                if file_list.decode() == "NOT_FILE":
-                    filepath = os.path.join(folder_path, filename)
-                    client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
-                    send_file(client_socket, filepath)
-                    print(f'{filename} 파일이 전송되었습니다.')
-                else:
-                    filepath = os.path.join(folder_path, filename)
-                    client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
-                    send_file(client_socket, filepath)
-                    print(f'{filename} 파일이 전송되었습니다.')
-    response = client_socket.recv(4096)  # 서버 응답 대기
+                if file_list.decode().find("LCA") != -1:
+                    if file_list.decode().find(filename) != -1:
+                        continue
+                    if file_list.decode() == "LCA NOT_FILE":
+                        filepath = os.path.join(folder_path, filename)
+                        print("CVV", filename, "--EOF--")
+                        client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+                        send_file(client_socket, filepath)
+                        print(f'{filename} 파일이 전송되었습니다.')
+                    else:
+                        filepath = os.path.join(folder_path, filename)
+                        print("CVV", filename, "--EOF--")
+                        client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+                        send_file(client_socket, filepath)
+                        print(f'{filename} 파일이 전송되었습니다.')
+
+
+#send_video_version_1
+# def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+#     if video_status == "ORG":
+#         for filename in os.listdir(folder_path):
+#             if filename.endswith(".mp4"):
+#                 client_socket.sendall("LCA".encode())
+#                 file_list = client_socket.recv(4096)  # 서버 응답 대기
+#                 # print(file_list)
+#                 if file_list.decode().find("LCA") != -1:
+#                     if file_list.decode().find(filename) != -1:
+#                         continue
+                    
+#                     if file_list.decode() == "LCA NOT_FILE":
+#                         filepath = os.path.join(folder_path, filename)
+#                         client_socket.sendall(b"ORG" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+#                         send_file(client_socket, filepath)
+#                         # print(f'{filename} 파일이 전송되었습니다.')
+#                     else:
+#                         filepath = os.path.join(folder_path, filename)
+#                         client_socket.sendall(b"ORG" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+#                         send_file(client_socket, filepath)
+#                         # print(f'{filename} 파일이 전송되었습니다.')
+#     else: 
+#         for filename in os.listdir(folder_path):
+#             if filename.endswith(".mp4"):
+#                 client_socket.sendall("LCB".encode())
+#                 file_list = client_socket.recv(4096)  # 서버 응답 대기
+#                 print(file_list)
+#                 if file_list.decode().find("LCB") != -1:
+#                     if file_list.decode().find(filename) != -1:
+#                         continue
+#                     if file_list.decode() == "LCB NOT_FILE":
+#                         filepath = os.path.join(folder_path, filename)
+#                         client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+#                         send_file(client_socket, filepath)
+#                         print(f'{filename} 파일이 전송되었습니다.')
+#                     else:
+#                         filepath = os.path.join(folder_path, filename)
+#                         client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
+#                         send_file(client_socket, filepath)
+#                         print(f'{filename} 파일이 전송되었습니다.')
+    # response = client_socket.recv(4096)  # 서버 응답 대기
 
 # 실시간 스트리밍으로 합성 영상 저장 함수
+
 def startVideo():
     handleImg = cv2.imread("./source/handle.png", cv2.IMREAD_UNCHANGED)
-
     while True:
         file_names = os.listdir("../camera/camera")
         composit_file_names = os.listdir("../camera/composit")
@@ -82,19 +214,38 @@ def startVideo():
             if cap.read()[0] != False:
                 capW = 640
                 capH = 480
-                f = open(f"../camera/check_time_log/{file_name}.txt", 'w')
                 fps = 60
                 visual = Visual()
                 count = 0
                 random_value = 0
-                save_file = saveVideoWriter(cap, capW, capH,file_name)
-                if cap.isOpened(): 
+                i = 0
+                data_jump = 0 
+                save_file = saveVideoWriter(cap, capW, capH, file_name)
+                if cap.isOpened():
+                    try:
+                        ecu_dataframe, unique_id = can_data_csv_read(file_name)
+                        camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
+                        reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
+                    except:
+                        continue
                     while True:
                         ret, video = cap.read()      # 다음 프레임 읽기      --- ②
                         count += 1
-                        if ret: 
-                            f.write(f"{count} {int(time.time())} \n")
+                        print(ret)
+                        if ret:
+                            ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
                             print(f"합성 중... {count}")
+                            # print(ecu_data)
+                            if camera_1sec_frame_sum == count:
+                                data_jump = 0
+                                count = 0
+                                i += 1
+                            # print(ecu_data)
+                            # # print(frame_ecu_data)
+                            # if not frame_ecu_data == False:
+                            #     for id in unique_id:
+                            #         # print(frame_ecu_data)
+                            #         print(frame_ecu_data[id].loc[data_jump + frame_time_jump])
                             visual.resize(capW, capH, video)
                             random_value += (random.randint(-3, 3))
                             visual.board_graphic(40, r= 128, g=128, b=128 )
@@ -102,18 +253,27 @@ def startVideo():
                             visual.CountTime()
                             visual.draw_graph(random_value)
                             save_file.write(visual.video)
+                            visual.board_text("one", 100,100,0,255,0)
+                            data_jump = data_jump + time_jump
+                            print("data jump + time jump" , data_jump, time_jump)
+                            print() if ecu_data[790.0].empty else print(list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
+                            print() if ecu_data[790.0].empty else visual.board_text("one", 100,100,0,255,0)
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
                             cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
                         else:                       # 다음 프레임 읽을 수 없슴,
                             break             # 재생 완료
-                    f.close()
-                    cap.release()
-                    send_video(f"../camera/composit/","CVV")
+                    print("continue")
                 else:
                     print("can't open video_composit.")      # 캡쳐 객체 초기화 실패
+            cap.release()
+            send_video_version2(f"../camera/composit/","CVV")
+            # thread = threading.Thread(target=send_video_version2(f"../camera/composit/","CVV"))
+            # thread.daemon = True
+            # thread.start()
+            break
 
-    # cap.release()                       # 캡쳐 자원 반납
-    # cv2.destroyAllWindows()
+            
+
 
 
 #합성 영상만 확인하는 함수
@@ -162,30 +322,50 @@ def saveVideoWriter_old(cap, capW, capH):
     out = cv2.VideoWriter('./source/result.avi', fourcc, fps, (capW, capH))
     return out
 
+import time
+from unittest.mock import patch
+
+def mock_time():
+    return 1717054130
+
+
 # 카메라(웹캠) 프레임 읽기
 def streamVideo():
     capW = 640
     capH = 480
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
     cap = cv2.VideoCapture(0)              # 0번 카메라 장치 연결 ---①, 1번은 웹캠
-    duration = 30 #녹화 시간
+    duration = 10 #녹화 시간
     fps = cap.get(cv2.CAP_PROP_FPS)
+    a = 0
     while True:
         count = 0
-        now = datetime.datetime.now()
-        now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
-        f = open(f"../camera/time_log/{now}.txt", 'w')
+        count_list = []
+        time_list = []
+        temp = time.time() - 1717054130
+        if a == 0:
+            timestamp = 1717054130
+            # timestamp를 이용해 datetime 객체를 생성합니다.
+            now = datetime.datetime.fromtimestamp(timestamp)
+            now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
+            a += 1
+        else:
+            now = datetime.datetime.now()
+            now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
         out = cv2.VideoWriter(f"../camera/camera/{now}.mp4",fourcc, fps,(capW, capH))
         if cap.isOpened():
+            print(now)
             start_time = time.time()                   
             while True:
-                # print(count)
+                # prin  t(count)
                 ret, img = cap.read()
                 count += 1           # 다음 프레임 읽기
                 if ret:
-                    f.write(f"{count} {int(time.time())} \n")
+                    print(count)
+                    count_list.append(count)
+                    time_list.append(int(time.time())- temp)
                     out.write(img)
-                    cv2.imshow("img", img)
+                    # cv2.imshow("img", img)
                     cv2.waitKey(1)
                     if (time.time() - start_time) > duration:
                         break
@@ -194,10 +374,14 @@ def streamVideo():
                     break
         else:
             print("can't open camera.")
-            break
-        f.close()
+            continue
+        csv_file = pd.DataFrame({'count': count_list, 'time': time_list})
+        csv_file.to_csv(f"../camera/time_log/{now}.csv")
         out.release()
-        send_video(f"../camera/camera/","ORG")
+        send_video_version2(f"../camera/camera/","ORG")
+        # thread = threading.Thread(target=send_video_version2(f"../camera/camera/","ORG"))
+        # thread.daemon = True
+        # thread.start()
 
  # 그래프를 생성하는 함수
 # def draw_graph(data):
@@ -251,18 +435,24 @@ def streamVideo():
 
 
 if __name__ == "__main__":
-    host = '192.168.0.107'
+    host = '192.168.112.1'
     port = 12345
-                            
-    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # client_socket.connect((host, port))
+
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((host, port))
     
-    # thread = threading.Thread(target=streamVideo)
-    # thread.daemon = True
-    # thread.start()
+    thread = threading.Thread(target=streamVideo)
+    thread.daemon = True
+    thread.start()
+    
+    # thread2 = threading.Thread(target=can_net)
+    # thread2.daemon = True
+    # thread2.start()
     
     driveVideo = "./source/drive.mp4"
-    startVideo_old(driveVideo)
+    # startVideo_old(driveVideo)
+    startVideo()
+
     # client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 

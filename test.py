@@ -3,70 +3,136 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
+import random
+import time
+# from can_network import canData
+from visualization import Visual
+import os 
+import threading
+import socket
+import datetime
+import pandas as pd
+import re
 
-# 그래프를 생성하는 함수
-def draw_graph(data):
-    # fig = Figure(figsize=(5, 2), dpi=100)
-    fig = plt.figure()
-    canvas = FigureCanvas(fig)
-    ax = fig.add_subplot(111)
-    ax.bar(1, data)
-    # ax.xsticks(1, "rpm")
-    ax.set_title('Real-time Graph')
-    ax.set_xlabel('Frame')
-    ax.set_ylabel('Brightness')
-    # ax.grid(True)
 
-    canvas.draw()
-    graph_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
-    graph_image = graph_image.reshape(canvas.get_width_height()[::-1] + (3,))
+filename = "2024y_05m_30d_16h_28m_49s"
+
+filename = filename.replace(".mp4", "")
+file_pattern = re.compile(r'(\d{4})y_(\d{2})m_(\d{2})d_(\d{2})h_(\d{2})m_(\d{2})s')
+match = file_pattern.match(filename)
+
+year, month, day, hour, minute, second = map(int, match.groups())
+
+file_time = datetime.datetime(year, month, day, hour, minute, second)
+
+one_minute = datetime.timedelta(minutes=1)
+times_to_check = [
+    (file_time - one_minute).strftime("%Yy_%mm_%dd_%Hh_%Mm"),
+    file_time.strftime("%Yy_%mm_%dd_%Hh_%Mm"),
+    (file_time + one_minute).strftime("%Yy_%mm_%dd_%Hh_%Mm")
+]
+
+target_files = []
+
+# 폴더 내 파일들에 대해 반복
+for filename in os.listdir("../camera/csv"):
+    for time_str in times_to_check:
+        if filename.startswith(time_str) and filename.endswith('.csv'):
+            target_files.append(filename)
+            
+dataframe = []
+for count, value in enumerate(target_files):
+    df = pd.read_csv("../camera/csv/{}".format(value))
+    df['time'] = df['time'].astype(int)
+    df['time'] = df['time'].astype(float)
+
     
-    return graph_image
+    dataframe.append(df)
 
-# 비디오 캡처 초기화
-cap = cv2.VideoCapture(0)
+full_dataframe = dataframe[0]
 
-# 그래프에 표시할 데이터
-# data = []
+for count, value in enumerate(dataframe):
+    if count == 0:
+        continue
+    full_dataframe = pd.concat([full_dataframe, value])
+# print(full_dataframe['time'])
+unique_id = full_dataframe["ID"].unique()
+# for i in unique_id:
+    # print(full_dataframe[full_dataframe['time'] == 1717054131][full_dataframe['ID'] == i])
+    
 
+
+frame_log = pd.read_csv("../camera/time_log/2024y_05m_30d_16h_28m_50s.csv")
+frame_log['time'] = frame_log['time'].astype(int)
+frame_log['time'] = frame_log['time'].astype(float)
+
+start_time = frame_log.loc[0]['time']
+i = 0
+frame_for_sec = []
+dict = {}
 while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
-    
-    # 임의의 데이터 추가 (여기서는 프레임의 밝기 평균값)
-    # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # avg_brightness = np.mean(gray)
-    # data.append(avg_brightness)
-    data =1
-    # 데이터의 길이를 제한
-    # if len(data) > 100:
-    #     data.pop(0)
-    
-    # 그래프 이미지 생성
-    graph_image = draw_graph(data)
-    
-    # 그래프 이미지를 OpenCV BGR 포맷으로 변환
-    graph_image_bgr = cv2.cvtColor(graph_image, cv2.COLOR_RGB2BGR)
-    
-    # 그래프 이미지를 원본 프레임에 합성
-    graph_h, graph_w, _ = graph_image_bgr.shape
-    frame_h, frame_w, _ = frame.shape
-    
-    # 그래프 이미지가 프레임보다 크지 않도록 크기 조정
-    if graph_w > frame_w:
-        scale = frame_w / graph_w
-        graph_image_bgr = cv2.resize(graph_image_bgr, (frame_w, int(graph_h * scale)))
-        graph_h, graph_w, _ = graph_image_bgr.shape
+    #초당 몇 프레임인지 파악
+    # print(len(frame_log[frame_log['time'] == int(start_time) + i]))
+    frame_for_sec.append(len(frame_log[frame_log['time'] == int(start_time) + i]))
 
-    # 프레임 위에 그래프 이미지 배치
-    frame[0:graph_h, 0:graph_w] = graph_image_bgr
-    
-    # 화면에 표시
-    cv2.imshow('Frame with Graph', frame)
-    
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    dict[(start_time) + i] = frame_for_sec[i]
+    i += 1
+    if(len(frame_log[frame_log['time'] == int(start_time) + i]) == 0):
         break
 
-cap.release()
-cv2.destroyAllWindows()
+
+# 컬럼에 해당하는 데이터만 뽑고싶으면 [[]]
+# 어떤 조건에 해당하는 데이터를 뽑고 싶으면 df[df[] == value][df[] == value2], df[(df[] == value) & (df[] == value2)]
+
+frame_ecu_time = {}
+i = 0
+
+# print(full_dataframe.loc[0]['time'])
+# print(float(list(dict.keys())[i]))
+# print(full_dataframe[full_dataframe['time'] == float(list(dict.keys())[i])][full_dataframe["ID"] == float(unique_id[0])])
+# print(full_dataframe[(full_dataframe['time'] == float(list(dict.keys())[i])) & (full_dataframe["ID"] == unique_id[0])])
+# print(full_dataframe[(full_dataframe['time'] == float(list(dict.keys())[1]))])
+# print(full_dataframe[(full_dataframe["ID"] == float(unique_id[0]))])
+# print(float(unique_id[0]))
+# print(full_dataframe.loc[0]['time'] )
+# # print(list(dict.keys())[2])
+# print(float(list(dict.keys())[0]))
+# print(full_dataframe[full_dataframe['time'] == float(list(dict.keys())[2])])
+# for id in unique_id:
+#         print(full_dataframe[full_dataframe['time'] == float(list(dict.keys())[i])][full_dataframe["ID"] == float(id)])
+# while True:  
+#     for j in range(0,20):
+#         for id in unique_id:
+#             frame_ecu_time[id] =full_dataframe[(full_dataframe['time'] == float(list(dict.keys())[i])) & (full_dataframe["ID"] == id)]
+#             frame_ecu_time[id] = full_dataframe[(full_dataframe['time'] == float(list(dict.keys())[i])) & (full_dataframe["ID"] == id)]
+#     i += 1
+#     if(i > 8):
+#         break
+
+# print(frame_ecu_time[unique_id[0]])
+# 1715950420
+# for _, i in enumerate(dataframe):
+#     print(_)
+
+# print(full_dataframe[full_dataframe["ID"]== unique_id[0]][["eng_temp","CONF_TCU"]])
+reduction_dataframe ={}
+for id in unique_id:
+    if id == 1087.0:
+        reduction_dataframe[id] = full_dataframe[full_dataframe["ID"]== id][['ID', 'time',"CUR_GR"]]
+    elif id == 809.0:
+        reduction_dataframe[id] = full_dataframe[full_dataframe["ID"]== id][['ID', 'time',"eng_temp","break_on_off","TPS","PV_AC_CAN","CONF_TCU"]]
+    elif id == 544.0:
+        reduction_dataframe[id] = full_dataframe[full_dataframe["ID"]== id][['ID', 'time',"break_PRES"]]
+    elif id == 790.0:
+        reduction_dataframe[id] = full_dataframe[full_dataframe["ID"]== id][['ID', 'time',"VS","RPM"]]
+    elif id == 688.0:
+        reduction_dataframe[id] = full_dataframe[full_dataframe["ID"]== id][['ID', 'time',"s_angle","s_speed"]]
+# print(full_dataframe["break_PRES"]) 
+# print(reduction_dataframe[22])
+
+print() if reduction_dataframe[790.0].empty else print(list(reduction_dataframe[790.0]["RPM"])[0])
+# print(type(unique_id[0]))
+# for id in unique_id:
+#     print(id)
+#     print(reduction_dataframe[id][(reduction_dataframe[id]['time'] == float(list(dict.keys())[3]))& (reduction_dataframe[id]["ID"] == id)])
+# print(reduction_dataframe[unique_id[0]][(reduction_dataframe[unique_id[0]]['time'] == float(list(dict.keys())[i])) & (reduction_dataframe[unique_id[0]]["ID"] == unique_id)])
