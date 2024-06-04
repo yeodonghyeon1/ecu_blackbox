@@ -13,7 +13,7 @@ import socket
 import datetime
 import pandas as pd
 import re
-from pi.can import can_net
+# from pi.can import can_net
 import atexit
 import time
 from unittest.mock import patch
@@ -390,22 +390,22 @@ if __name__ == "__main__":
     host = '192.168.112.1'
     port = 12345
 
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((host, port))
+    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # client_socket.connect((host, port))
     
-    atexit.register(handle_exit, client_socket)
+    # atexit.register(handle_exit, client_socket)
 
-    thread = threading.Thread(target=streamVideo)
-    thread.daemon = True
-    thread.start()
+    # thread = threading.Thread(target=streamVideo)
+    # thread.daemon = True
+    # thread.start()
     
-    thread2 = threading.Thread(target=can_net)
-    thread2.daemon = True
-    thread2.start()
+    # thread2 = threading.Thread(target=can_net)
+    # thread2.daemon = True
+    # thread2.start()
     
     driveVideo = "./source/drive.mp4"
-    # startVideo_old(driveVideo)
-    startVideo()
+    startVideo_old(driveVideo)
+    # startVideo()
 
     # client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
