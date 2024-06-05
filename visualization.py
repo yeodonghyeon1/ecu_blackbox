@@ -96,17 +96,25 @@ class Visual:
     # 그래프를 생성하는 함수
     def draw_graph(self, data):
         
-        fig = Figure(figsize=(2, 2), dpi=100)
+        fig = Figure(figsize=(2, 2), dpi=80)
         canvas = FigureCanvas(fig)
         fig.patch.set_alpha(1)
 
         ax = fig.add_subplot(111)
         ax.set_ylim([0, 1500])
-        ax.bar(1, data)
+        ax.bar(1, data, color='gray', edgecolor='black', linewidth=2, width=0.4)
+        ax.set_facecolor('#F5F5DC')
         ax.set_xticks([])
-        ax.set_title('Real-time Graph')
-        ax.set_xlabel('RPM')
-        ax.set_ylabel('Brightness')
+        ax.set_title('Real-time RPM figures', fontsize=6)
+        ax.set_xlabel('RPM', fontsize=6)
+        # ax.set_ylabel('', fontsize=6)
+        
+        for spine in ax.spines.values():
+            spine.set_edgecolor('black')
+            spine.set_linewidth(2)
+        
+        fig.tight_layout(pad=1.0)
+
         canvas.draw()
         graph_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
         graph_image = graph_image.reshape(canvas.get_width_height()[::-1] + (3,))

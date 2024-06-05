@@ -13,7 +13,7 @@ def open_new_file(file_counter):
     now = datetime.datetime.now()
     filename = filename = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss.csv")
     csv_header = ['Timestamp', 'ID', 'DLC', 'Data']
-    return open(filename, 'w', newline='')
+    return open("../camera/csv/{}".format(filename), 'w', newline='')
 
 def extract_bits(data, start_bit, end_bit):
     binary_data = bin(data)[2:].zfill(64)

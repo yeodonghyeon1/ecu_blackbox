@@ -5,7 +5,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import random
 import time
-# from can_network import canData
+from can_network import canData
 from visualization import Visual
 import os 
 import threading
@@ -13,7 +13,7 @@ import socket
 import datetime
 import pandas as pd
 import re
-from pi.can import can_net
+# from pi.can import can_net
 import atexit
 import time
 from unittest.mock import patch
@@ -120,6 +120,7 @@ def send_video_version2(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡ
         server_request = 0
         client_socket.sendall("LCA".encode())
         file_list = client_socket.recv(4096)  # 서버 응답 대기
+        print(file_list)
         for filename in os.listdir(folder_path):
             if filename.endswith(".mp4"):
                 if file_list.decode().find("LCA") != -1:
@@ -142,6 +143,7 @@ def send_video_version2(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡ
         server_request = 0
         client_socket.sendall("LCA".encode())
         file_list = client_socket.recv(4096)  # 서버 응답 대기
+        print(file_list)
         for filename in os.listdir(folder_path):
             if filename.endswith(".mp4"):
                 if file_list.decode().find("LCA") != -1:
@@ -159,7 +161,6 @@ def send_video_version2(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡ
                         client_socket.sendall(b"CVV" + filename.encode() + b'--EOF--')  # 파일 이름 전송
                         send_file(client_socket, filepath)
                         print(f'{filename} 파일이 전송되었습니다.')
-
 
 #send_video_version_1
 # def send_video(folder_path, video_status):#rase main ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
@@ -215,7 +216,7 @@ def startVideo():
             if "composit_" + file_name in composit_file_names:
                     continue
             cap = cv2.VideoCapture(f"../camera/camera/{file_name}") # 동영상 캡쳐 객체 생성  ---①
-
+            print(file_name)
             if cap.read()[0] != False:
                 capW = 640
                 capH = 480
@@ -238,31 +239,30 @@ def startVideo():
                         count += 1
                         print(ret)
                         if ret:
-                            # ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
+                            ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
                             print(f"합성 중... {count}")
-                            # print(ecu_data)
-                            # if camera_1sec_frame_sum == count:
-                            #     data_jump = 0
-                            #     count = 0
-                            #     i += 1
+                            print(ecu_data)
+                            if camera_1sec_frame_sum == count:
+                                data_jump = 0
+                                count = 0
+                                i += 1
                             visual.resize(capW, capH, video)
                             random_value += (random.randint(-3, 3))
                             visual.board_graphic(40, r= 250, g=240, b=230 )
-                            # visual.borad_data(ecu_data, data_jump, time_jump)
+                            visual.borad_data(ecu_data, data_jump, time_jump)
                             visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
                             visual.CountTime()
-                            # print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
+                            print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
                             save_file.write(visual.video)
                             visual.board_text("one", 100,100,0,255,0)
-                            # data_jump = data_jump + time_jump
-                            # print("data jump + time jump" , data_jump, time_jump)
+                            data_jump = data_jump + time_jump
+                            print("data jump + time jump" , data_jump, time_jump)
 
 
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
-                            # cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
+                            cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
                         else:                       # 다음 프레임 읽을 수 없슴,
                             cap.release()
-                            save_file.release()
                             send_video_version2(f"../camera/composit/","CVV")
                             break             # 재생 완료
                     print("continue")
@@ -321,7 +321,8 @@ def startVideo_old(video_file):
 
 def saveVideoWriter(cap, capW, capH, file):
     fps = cap.get(cv2.CAP_PROP_FPS)
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+    # fourcc = cv2.VideoWriter_fourcc()
     out = cv2.VideoWriter(f"../camera/composit/composit_{file}", fourcc, fps, (capW, capH))
     return out
 
@@ -341,10 +342,13 @@ def mock_time():
 def streamVideo():
     capW = 640
     capH = 480
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+
+    # fourcc = cv2.VideoWriter_fourcc(*'avc1')
     cap = cv2.VideoCapture(0)              # 0번 카메라 장치 연결 ---①, 1번은 웹캠
     duration = 30 #녹화 시간
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    fps = cap.get(cv2.CAP_PROP_FPS)/2
+    print(fps)
     a = 0
     while True:
         count = 0
@@ -374,7 +378,8 @@ def streamVideo():
                     time_list.append(int(time.time()))
 
                     out.write(img)
-                    # cv2.imshow("img", img)
+                    cv2.imshow("img", img)
+                    # time.sleep(0.001)
                     cv2.waitKey(1)
                     if (time.time() - start_time) > duration:
                         break
@@ -387,10 +392,10 @@ def streamVideo():
         csv_file = pd.DataFrame({'count': count_list, 'time': time_list})
         csv_file.to_csv(f"../camera/time_log/{now}.csv")
         out.release()
-        send_video_version2(f"../camera/camera/","ORG")
-        # thread = threading.Thread(target=send_video_version2(f"../camera/camera/","ORG"))
-        # thread.daemon = True
-        # thread.start()
+        # send_video_version2(f"../camera/camera/","ORG")
+        thread = threading.Thread(target=send_video_version2(f"../camera/camera/","ORG"))
+        thread.daemon = True
+        thread.start()
 
 def handle_exit(client_socket):
     client_socket.sendall(b"END")
@@ -405,18 +410,20 @@ if __name__ == "__main__":
     
     # atexit.register(handle_exit, client_socket)
 
-    # thread = threading.Thread(target=streamVideo)
-    # thread.daemon = True
-    # thread.start()
+    thread = threading.Thread(target=streamVideo)
+    thread.daemon = True
+    thread.start()
     
-    # thread2 = threading.Thread(target=can_net)
-    # thread2.daemon = True
-    # thread2.start()
+    thread2 = threading.Thread(target=can_net)
+    thread2.daemon = True
+    thread2.start()
     
     driveVideo = "./source/drive.mp4"
-    startVideo_old(driveVideo)
-    # startVideo()
+    # startVideo_old(driveVideo)
+    startVideo()
 
+    while True:
+        time.sleep(999999999)
     # client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 
