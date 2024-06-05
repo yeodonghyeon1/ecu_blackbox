@@ -227,41 +227,42 @@ def startVideo():
                 data_jump = 0 
                 save_file = saveVideoWriter(cap, capW, capH, file_name)
                 if cap.isOpened():
-                    try:    
-                        ecu_dataframe, unique_id = can_data_csv_read(file_name)
-                        camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
-                        reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
-                    except:
-                        continue
+                    # try:    
+                    #     ecu_dataframe, unique_id = can_data_csv_read(file_name)
+                    #     camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
+                    #     reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
+                    # except:
+                    #     continue
                     while True:
                         ret, video = cap.read()      # 다음 프레임 읽기      --- ②
                         count += 1
                         print(ret)
                         if ret:
-                            ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
+                            # ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
                             print(f"합성 중... {count}")
-                            print(ecu_data)
-                            if camera_1sec_frame_sum == count:
-                                data_jump = 0
-                                count = 0
-                                i += 1
+                            # print(ecu_data)
+                            # if camera_1sec_frame_sum == count:
+                            #     data_jump = 0
+                            #     count = 0
+                            #     i += 1
                             visual.resize(capW, capH, video)
                             random_value += (random.randint(-3, 3))
                             visual.board_graphic(40, r= 250, g=240, b=230 )
-                            visual.borad_data(ecu_data, data_jump, time_jump)
+                            # visual.borad_data(ecu_data, data_jump, time_jump)
                             visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
                             visual.CountTime()
-                            print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
+                            # print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
                             save_file.write(visual.video)
                             visual.board_text("one", 100,100,0,255,0)
-                            data_jump = data_jump + time_jump
-                            print("data jump + time jump" , data_jump, time_jump)
+                            # data_jump = data_jump + time_jump
+                            # print("data jump + time jump" , data_jump, time_jump)
 
 
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
-                            cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
+                            # cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
                         else:                       # 다음 프레임 읽을 수 없슴,
                             cap.release()
+                            save_file.release()
                             send_video_version2(f"../camera/composit/","CVV")
                             break             # 재생 완료
                     print("continue")
@@ -282,6 +283,12 @@ def startVideo_old(video_file):
     cap = cv2.VideoCapture(video_file) # 동영상 캡쳐 객체 생성  ---①
     capW = 640
     capH = 480
+    window_width = 800
+    window_height = 480
+
+
+    right_margin = window_width - capW
+    bottom_margin = window_height - capH
     # cap.set(cv2.CAP_PROP_FRAME_WIDTH, w/3) # 가로
     # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h/3) # 세로
     # print("변환된 동영상 너비(가로) : {}, 높이(세로) : {}".format(w, h))
@@ -292,7 +299,10 @@ def startVideo_old(video_file):
         while True:
             ret, video = cap.read()      # 다음 프레임 읽기      --- ②
             if ret:  
+
                 visual.resize(capW, capH, video)
+                visual.video = cv2.copyMakeBorder(visual.video, 0, bottom_margin, 0, right_margin, cv2.BORDER_CONSTANT, value=[255,255, 255])
+
                 random_value += (random.randint(-3, 3))
                 visual.board_graphic(40, r= 250, g=240, b=230 )
                 visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
@@ -387,25 +397,25 @@ def handle_exit(client_socket):
 
 
 if __name__ == "__main__":
-    host = '192.168.112.1'
+    host = '192.168.0.108'
     port = 12345
 
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((host, port))
+    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # client_socket.connect((host, port))
     
-    atexit.register(handle_exit, client_socket)
+    # atexit.register(handle_exit, client_socket)
 
-    thread = threading.Thread(target=streamVideo)
-    thread.daemon = True
-    thread.start()
+    # thread = threading.Thread(target=streamVideo)
+    # thread.daemon = True
+    # thread.start()
     
-    thread2 = threading.Thread(target=can_net)
-    thread2.daemon = True
-    thread2.start()
+    # thread2 = threading.Thread(target=can_net)
+    # thread2.daemon = True
+    # thread2.start()
     
     driveVideo = "./source/drive.mp4"
-    # startVideo_old(driveVideo)
-    startVideo()
+    startVideo_old(driveVideo)
+    # startVideo()
 
     # client_socket.close()# ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
