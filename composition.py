@@ -262,6 +262,9 @@ def startVideo():
 
                             # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
                             cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
+
+                            except:
+                                pass
                         else:                       # 다음 프레임 읽을 수 없슴,
                             cap.release()
                             send_video_version2(f"../camera/composit/","CVV")
