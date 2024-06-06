@@ -261,7 +261,7 @@ def startVideo():
 
 
                                 # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
-                                cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
+                                # cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
 
                             except:
                                 pass
