@@ -68,7 +68,7 @@ def SAS_angle(angle): #각도
    f_offset = 0.0
    angle = int(angle)
    if angle >> 15 ==1:
-     angle = ~angle+1
+     angle = angle - 0x10000
    result = f_offset + f_scale * angle
    return result
 

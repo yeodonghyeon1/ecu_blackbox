@@ -13,7 +13,7 @@ import socket
 import datetime
 import pandas as pd
 import re
-from pi.can import can_net
+# from pi.can import can_net
 import atexit
 import time
 from unittest.mock import patch
@@ -228,12 +228,12 @@ def startVideo():
                 data_jump = 0 
                 save_file = saveVideoWriter(cap, capW, capH, file_name)
                 if cap.isOpened():
-                    try:    
-                        ecu_dataframe, unique_id = can_data_csv_read(file_name)
-                        camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
-                        reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
-                    except:
-                        continue
+                    # try:    
+                    #     ecu_dataframe, unique_id = can_data_csv_read(file_name)
+                    #     camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
+                    #     reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
+                    # except:
+                    #     continue
                     while True:
                         ret, video = cap.read()      # 다음 프레임 읽기      --- ②
                         count += 1
@@ -260,18 +260,11 @@ def startVideo():
                                 print("data jump + time jump" , data_jump, time_jump)
 
 
-                                # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
-                                # cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
-                                # print("aaa")
-                            except:
-                                print("index error")
+                            # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
+                            cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
                         else:                       # 다음 프레임 읽을 수 없슴,
                             cap.release()
-                            save_file.release()
-                            # send_video_version2(f"../camera/composit/","CVV")
-                            thread = threading.Thread(target=send_video_version2(f"../camera/composit/","CVV"))
-                            thread.daemon = True
-                            thread.start()
+                            send_video_version2(f"../camera/composit/","CVV")
                             break             # 재생 완료
                     print("continue")
                 else:
@@ -291,6 +284,12 @@ def startVideo_old(video_file):
     cap = cv2.VideoCapture(video_file) # 동영상 캡쳐 객체 생성  ---①
     capW = 640
     capH = 480
+    window_width = 800
+    window_height = 480
+
+
+    right_margin = window_width - capW
+    bottom_margin = window_height - capH
     # cap.set(cv2.CAP_PROP_FRAME_WIDTH, w/3) # 가로
     # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h/3) # 세로
     # print("변환된 동영상 너비(가로) : {}, 높이(세로) : {}".format(w, h))
@@ -301,7 +300,10 @@ def startVideo_old(video_file):
         while True:
             ret, video = cap.read()      # 다음 프레임 읽기      --- ②
             if ret:  
+
                 visual.resize(capW, capH, video)
+                visual.video = cv2.copyMakeBorder(visual.video, 0, bottom_margin, 0, right_margin, cv2.BORDER_CONSTANT, value=[255,255, 255])
+
                 random_value += (random.randint(-3, 3))
                 visual.board_graphic(40, r= 250, g=240, b=230 )
                 visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
@@ -403,26 +405,23 @@ def handle_exit(client_socket):
 if __name__ == "__main__":
     host = '192.168.116.187'
     port = 12345
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((host, port))
-    
-    atexit.register(handle_exit, client_socket)
 
-    thread = threading.Timer(1, streamVideo)
+    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # client_socket.connect((host, port))
+    
+    # atexit.register(handle_exit, client_socket)
+
+    thread = threading.Thread(target=streamVideo)
     thread.daemon = True
     thread.start()
     
-
     thread2 = threading.Thread(target=can_net)
     thread2.daemon = True
     thread2.start()
     
     driveVideo = "./source/drive.mp4"
     # startVideo_old(driveVideo)
-
-    thread3 = threading.Thread(target=startVideo)
-    thread3.daemon = True
-    thread3.start()
+    startVideo()
 
     while True:
         time.sleep(999999999)
