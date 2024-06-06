@@ -5,7 +5,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import random
 import time
-from can_network import canData
+# from can_network import canData
 from visualization import Visual
 import os 
 import threading
@@ -251,7 +251,7 @@ def startVideo():
                                 random_value += (random.randint(-3, 3))
                                 visual.board_graphic(40, r= 250, g=240, b=230 )
                                 visual.borad_data(ecu_data, data_jump, time_jump)
-                                visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
+                                print() if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=list(ecu_data[688.0]["s_angle"])[data_jump + time_jump], handleImg=handleImg)
                                 visual.CountTime()
                                 print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
                                 save_file.write(visual.video)
@@ -379,7 +379,7 @@ def streamVideo():
                     out.write(img)
                     cv2.imshow("img", img)
                     # time.sleep(0.001)
-                    cv2.waitKey(1)
+                    # cv2.waitKey(1)
                     if (time.time() - start_time) > duration:
                         break
                 else:
@@ -401,7 +401,7 @@ def handle_exit(client_socket):
 
 
 if __name__ == "__main__":
-    host = '192.168.0.108'
+    host = '192.168.116.187'
     port = 12345
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((host, port))
