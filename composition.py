@@ -5,7 +5,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import random
 import time
-from can_network import canData
+# from can_network import canData
 from visualization import Visual
 import os 
 import threading
@@ -51,7 +51,7 @@ def can_data_csv_read(filename):
         dataframe.append(df)
 
     full_dataframe = dataframe[0]
-
+    
     for count, value in enumerate(dataframe):
         if count == 0:
             continue
@@ -284,7 +284,7 @@ def startVideo_old(video_file):
     capW = 640
     capH = 480
     window_width = 800
-    window_height = 480
+    window_height = 600
 
 
     right_margin = window_width - capW
@@ -410,17 +410,17 @@ if __name__ == "__main__":
     
     # atexit.register(handle_exit, client_socket)
 
-    thread = threading.Thread(target=streamVideo)
-    thread.daemon = True
-    thread.start()
+    # thread = threading.Thread(target=streamVideo)
+    # thread.daemon = True
+    # thread.start()
     
-    thread2 = threading.Thread(target=can_net)
-    thread2.daemon = True
-    thread2.start()
+    # thread2 = threading.Thread(target=can_net)
+    # thread2.daemon = True
+    # thread2.start()
     
     driveVideo = "./source/drive.mp4"
-    # startVideo_old(driveVideo)
-    startVideo()
+    startVideo_old(driveVideo)
+    # startVideo()
 
     while True:
         time.sleep(999999999)

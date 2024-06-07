@@ -53,13 +53,13 @@ class Visual:
         _, mask = cv2.threshold(handleImg[:,:,3] , 1 ,255, cv2.THRESH_BINARY)
         # print(mask.shape)
         mask_inv = cv2.bitwise_not(mask)
-        roi = self.video[300:300+h , 100:100+w]
+        roi = self.video[300:300+h , 660:660+w]
         handleImg = cv2.cvtColor(handleImg, cv2.COLOR_BGRA2BGR)
         masked_img = cv2.bitwise_and(handleImg, handleImg, mask=mask)
         masked_video = cv2.bitwise_and(roi, roi, mask=mask_inv)
         
         added = masked_img + masked_video
-        self.video[300:300+h, 100:100+w] = added
+        self.video[300:300+h, 660:660+w] = added
     
     def borad_data(self, ecu_data, data_jump, time_jump):
 
@@ -122,7 +122,7 @@ class Visual:
     
     def graph_show(self, frame , data):
             # 그래프 이미지 생성
-        graph_image = self.draw_graph(data)
+        graph_image = self.draw_graph2(data)
         
         # 그래프 이미지를 OpenCV BGR 포맷으로 변환
         graph_image_bgr = cv2.cvtColor(graph_image, cv2.COLOR_RGB2BGR)
@@ -139,3 +139,39 @@ class Visual:
 
         # 프레임 위에 그래프 이미지 배치
         frame[480-graph_h-self.board_value:graph_h+480-graph_h-self.board_value, 640-graph_w:graph_w+640-graph_w] = graph_image_bgr
+
+    def draw_graph2(self, data):
+            
+        fig = Figure(figsize=(6, 2), dpi=80)
+        canvas = FigureCanvas(fig)
+        fig.patch.set_alpha(1)
+
+        ax = fig.add_subplot(211)
+        ax.set_xlim([0, 1500])  # x축 범위 설정
+        ax.barh("break-press", data, color='gray', edgecolor='black', linewidth=2, height=0.4)  # y축에 "break-press" 추가
+        ax.set_facecolor('#F5F5DC')
+        ax.set_yticks([])  # y축 눈금 제거
+        ax.set_title('Real-time break-press figures', fontsize=6)
+        ax.set_ylabel('break-press', fontsize=6)  # y축 라벨 수정
+        ax.set_xlabel('RPM', fontsize=6)  # x축 라벨 수정
+
+        # 두 번째 그래프
+        ax2 = fig.add_subplot(212)  # 2행 1열 중 두 번째 위치
+        ax2.set_xlim([0, 1500])  # x축 범위 설정    
+        ax2.barh("Accel", data, color='gray', edgecolor='black', linewidth=2, height=0.4)  # y축에 "break-press" 추가
+        ax2.set_facecolor('#F5F5DC')
+        ax2.set_yticks([])  # y축 눈금 제거
+        ax2.set_title('Second Real-time RPM figures', fontsize=6)  # 두 번째 그래프의 제목
+        ax2.set_ylabel('accel-press', fontsize=6)  # y축 라벨 수정
+        ax2.set_xlabel('accel', fontsize=6)  # x축 라벨 수정
+
+        for spine in ax.spines.values():
+            spine.set_edgecolor('black')
+            spine.set_linewidth(2)
+            
+            fig.tight_layout(pad=1.0)
+
+            canvas.draw()
+            graph_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+            graph_image = graph_image.reshape(canvas.get_width_height()[::-1] + (3,))
+            return graph_image
