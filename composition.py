@@ -343,7 +343,6 @@ def startVideo():
                                 random_value += (random.randint(-3, 3))
                                 visual.board_graphic(40, r= 250, g=240, b=230 )
                                 visual.borad_data(ecu_data, data_jump, time_jump, before_data)
-
                                 try:
                                     if data_jump == 0:
                                         print("헨들 에러") if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=before_data["s_angle"] , handleImg=handleImg)
@@ -351,7 +350,10 @@ def startVideo():
                                         print("헨들 에러") if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=int(list(ecu_data[688.0]["s_angle"])[data_jump + time_jump]), handleImg=handleImg)
                                         before_data["s_angle"] = int(list(ecu_data[688.0]["s_angle"])[data_jump + time_jump])
                                 except:
-                                    print("헨들 에러") if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=before_data["s_angle"] , handleImg=handleImg)
+                                    try:
+                                        print("헨들 에러") if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=before_data["s_angle"] , handleImg=handleImg)
+                                    except:
+                                        pass
 
                                 try:
                                     if data_jump == 0:
@@ -361,9 +363,11 @@ def startVideo():
                                         before_data["PV_AC_CAN"] = list(ecu_data[809.0]["PV_AC_CAN"])[data_jump + time_jump]
                                         before_data["break_PRES"] = list(ecu_data[544.0]["break_PRES"])[data_jump + time_jump]
                                 except:
-                                    print() if ecu_data[809.0].empty else visual.graph_show(visual.video, before_data["PV_AC_CAN"], before_data["break_PRES"])
+                                    try:
+                                        print() if ecu_data[809.0].empty else visual.graph_show(visual.video, before_data["PV_AC_CAN"], before_data["break_PRES"])
+                                    except:
+                                        pass
 
-                                                           
                                 save_file.write(visual.video)
                                 print("time jump" , time_jump)
                                 cv2.imshow("video", visual.video) # 화면에 표시  --- ③
