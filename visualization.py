@@ -61,27 +61,82 @@ class Visual:
         added = masked_img + masked_video
         self.video[480:480+h, 10:10+w] = added
     
-    def borad_data(self, ecu_data, data_jump, time_jump):
+    def borad_data(self, ecu_data, data_jump, time_jump, before_data):
 
         #1 box
-        print() if ecu_data[809.0].empty else self.board_text(list(ecu_data[809.0]["eng_temp"])[data_jump + time_jump],
-                                                                int((-140+int(self.capW/4))), 
-                                                                self.board_value2+30, 0,255,0)
+        try:
+            if data_jump == 0:
+                print() if ecu_data[809.0].empty else self.board_text( before_data["eng_temp"],
+                                                                        int((-140+int(self.capW/4))), 
+                                                                        self.board_value2+30, 0,255,0)            
+            else:
+                print() if ecu_data[809.0].empty else self.board_text(list(ecu_data[809.0]["eng_temp"])[data_jump + time_jump],
+                                                                        int((-140+int(self.capW/4))), 
+                                                                        self.board_value2+30, 0,255,0)
+                before_data["eng_temp"] =list(ecu_data[809.0]["eng_temp"])[data_jump + time_jump]
+        except:
+            pass       
+
         #2 box
-        print() if ecu_data[790.0].empty else self.board_text(list(ecu_data[790.0]["VS"])[data_jump + time_jump],
-                                                                int((170+int(self.capW/4))), 
-                                                                self.board_value2+30, 0,255,0)
+        try:
+            if data_jump == 0:
+                print() if ecu_data[790.0].empty else self.board_text(libefore_data["VS"],
+                                                                        int((170+int(self.capW/4))), 
+                                                                        self.board_value2+30, 0,255,0)
+            else:
+                print() if ecu_data[790.0].empty else self.board_text(list(ecu_data[790.0]["VS"])[data_jump + time_jump],
+                                                                        int((170+int(self.capW/4))), 
+                                                                        self.board_value2+30, 0,255,0)
+                before_data["VS"] = list(ecu_data[790.0]["VS"])[data_jump + time_jump]
+        except:
+            pass
         #3 box
-        print() if ecu_data[790.0].empty else self.board_text(list(ecu_data[790.0]["RPM"])[data_jump + time_jump],
-                                                                int((10+int(self.capW/4))), 
-                                                                self.board_value2+30, 0,255,0)
+        try:
+            if data_jump == 0:
+                print() if ecu_data[790.0].empty else self.board_text(before_data["RPM"],
+                                                                        int((10+int(self.capW/4))), 
+                                                                        self.board_value2+30, 0,255,0)
+            else:
+                print() if ecu_data[790.0].empty else self.board_text(list(ecu_data[790.0]["RPM"])[data_jump + time_jump],
+                                                                        int((10+int(self.capW/4))), 
+                                                                        self.board_value2+30, 0,255,0)
+                before_data["RPM"] = list(ecu_data[790.0]["RPM"])[data_jump + time_jump]
+        except:
+            pass              
+
         #4 box
-        print() if ecu_data[1087.0].empty else self.board_text(list(ecu_data[1087.0]["CUR_GR"])[data_jump + time_jump],
-                                                                    int((340+int(self.capW/4))), 
-                                                                    self.board_value2+30, 0,255,0)
+        try:
+            if data_jump == 0:
+                print() if ecu_data[1087.0].empty else self.board_text(before_data["CUR_GR"],
+                                                                            int((340+int(self.capW/4))), 
+                                                                            self.board_value2+30, 0,255,0)
+            else:
+                print() if ecu_data[1087.0].empty else self.board_text(self.Gear(list(ecu_data[1087.0]["CUR_GR"])[data_jump + time_jump]),
+                                                                            int((340+int(self.capW/4))), 
+                                                                            self.board_value2+30, 0,255,0)
+                before_data["CUR_GR"] = self.Gear(list(ecu_data[1087.0]["CUR_GR"])[data_jump + time_jump])
+        except:
+            pass
 
 
-        
+    def Gear(self, data):
+        if data == 0:
+            return "P"
+        elif data == 7:
+            return "R"
+        elif data == 6:
+            return "N"
+        elif data == 5:
+            return "D"
+        elif data == 3:
+            return "3"
+        elif data == 2:
+            return "2"
+        elif data == 1:
+            return "1"
+        else:
+            return 0
+
     def CountTime(self):
         now = datetime.datetime.now()
         now2 = datetime.datetime.now()
@@ -120,10 +175,10 @@ class Visual:
         graph_image = graph_image.reshape(canvas.get_width_height()[::-1] + (3,))
         return graph_image
     
-    def graph_show(self, frame , data, data_type):
+    def graph_show(self, frame , data, data2):
             # 그래프 이미지 생성
             
-        graph_image = self.draw_graph2(data, data_type)
+        graph_image = self.draw_graph2(data, data2)
         
         # 그래프 이미지를 OpenCV BGR 포맷으로 변환
         graph_image_bgr = cv2.cvtColor(graph_image, cv2.COLOR_RGB2BGR)
@@ -138,19 +193,19 @@ class Visual:
             graph_image_bgr = cv2.resize(graph_image_bgr, (frame_w, int(graph_h * scale)))
             graph_h, graph_w, _ = graph_image_bgr.shape
 
-        print(700-graph_w, graph_w+700-graph_w)
+        #print(700-graph_w, graph_w+700-graph_w)
         # 프레임 위에 그래프 이미지 배치
         frame[640-graph_h-self.board_value:graph_h+640-graph_h-self.board_value, 630-graph_w:graph_w+630-graph_w] = graph_image_bgr
 
 
-    def draw_graph2(self, data, data_type):
+    def draw_graph2(self, data, data2):
             
         fig = Figure(figsize=(8, 2), dpi=60)
         canvas = FigureCanvas(fig)
         fig.patch.set_alpha(1)
 
         ax = fig.add_subplot(212)
-        ax.set_xlim([0, 1500])  # x축 범위 설정
+        ax.set_xlim([0, 100])  # x축 범위 설정
         ax.set_facecolor('#F5F5DC')
         ax.set_yticks([])  # y축 눈금 제거
         ax.set_title('Real-time break-press figures', fontsize=10)
@@ -159,7 +214,7 @@ class Visual:
 
         # # 두 번째 그래프
         ax2 = fig.add_subplot(211)  # 2행 1열 중 두 번째 위치
-        ax2.set_xlim([0, 1500])  # x축 범위 설정    
+        ax2.set_xlim([0, 100])  # x축 범위 설정    
         ax2.set_facecolor('#F5F5DC')
         ax2.set_yticks([])  # y축 눈금 제거
         ax2.set_title('Second Real-time Accel figures', fontsize=10)  # 두 번째 그래프의 제목
@@ -169,10 +224,9 @@ class Visual:
         # ax2.barh("accel-press", data, color='gray', edgecolor='black', linewidth=2, height=0.4)  # y축에 "break-press" 추가
         # ax.barh("break-press", data, color='gray', edgecolor='black', linewidth=2, height=0.4)  # y축에 "break-press" 추가
 
-        if data_type == "PV_AC_CAN":
-            ax2.barh("accel-press", data, color='gray', edgecolor='black', linewidth=2, height=0.4)  # y축에 "break-press" 추가
-        elif data_type == "break_PRES":
-            ax.barh("break-press", data, color='gray', edgecolor='black', linewidth=2, height=0.4)  # y축에 "break-press" 추가
+
+        ax2.barh("accel-press", data, color='gray', edgecolor='black', linewidth=2, height=0.4)  # y축에 "break-press" 추가
+        ax.barh("break-press", data2, color='gray', edgecolor='black', linewidth=2, height=0.4)  # y축에 "break-press" 추가
 
         for spine in ax.spines.values():
             spine.set_edgecolor('black')

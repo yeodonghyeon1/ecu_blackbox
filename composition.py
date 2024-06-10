@@ -103,9 +103,17 @@ def data_synchronization(dataframe, camera_dict, unique_id, i):
         for id in unique_id:
             ecu_data[id] = dataframe[id][(dataframe[id]['time'] == float(list(camera_dict.keys())[i])) & (dataframe[id]["ID"] == id)]
         camera_frame_sum = camera_dict[list(camera_dict.keys())[i]]
-        frame_time_jump = int(len(ecu_data[unique_id[0]][list(ecu_data[unique_id[0]].keys())[0]]) / camera_frame_sum)
+        # low = int(len(ecu_data[unique_id[0]][list(ecu_data[unique_id[0]].keys())[0]]))
+        # for i in range(0, 4):
+        #     if low > int(len(ecu_data[unique_id[i]][list(ecu_data[unique_id[i]].keys())[0]])):
+        #         low = int(len(ecu_data[unique_id[i]][list(ecu_data[unique_id[i]].keys())[0]]))
+        low = int(len(ecu_data[unique_id[4]][list(ecu_data[unique_id[4]].keys())[0]]))
+        frame_time_jump = int(low / camera_frame_sum)
+        # frame_time_jump += 1
+
         if frame_time_jump == 0:
             frame_time_jump = 1
+        #frame_time_jump = 1
         return ecu_data, camera_frame_sum, frame_time_jump
 
 def send_file(sock, filepath):#rase 1 ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
@@ -274,25 +282,38 @@ def send_video(folder_path, video_status): #rase main ㅡㅡㅡㅡㅡㅡㅡㅡ�
 def startVideo():
     global send_variable
     handleImg = cv2.imread("./source/handle.png", cv2.IMREAD_UNCHANGED)
+    # test = 0
+
     while True:
         file_names = os.listdir("../camera/camera")
         composit_file_names = os.listdir("../camera/composit")
         for file_name in file_names:
             if "composit_" + file_name in composit_file_names:
                     continue
+            
+            # if test == 0:
+            #     cap = cv2.VideoCapture("./source/2024y_05m_30d_16h_28m_50s.mp4") # 동영상 캡쳐 객체 생성  ---①
+            #     test += 1
+            # else:
             cap = cv2.VideoCapture(f"../camera/camera/{file_name}") # 동영상 캡쳐 객체 생성  ---①
+                
             print(file_name, "startVideo")
             if cap.read()[0] != False:
                 print(file_name, "readVideo")
                 capW = 640
                 capH = 480
+                window_width = 640
+                window_height = 600
+                right_margin = window_width - capW
+                bottom_margin = window_height - capH    
                 visual = Visual()
                 count = 0
                 random_value = 0
                 i = 0
-                data_jump = 0 
+                data_jump = 5 
                 index_error = 0
-                save_file = saveVideoWriter(cap, capW, capH, file_name)
+                before_data = {}
+                save_file = saveVideoWriter(cap, window_width, window_height, file_name)
                 if cap.isOpened():
 
                     ecu_dataframe, unique_id = can_data_csv_read(file_name)
@@ -304,43 +325,55 @@ def startVideo():
                         count += 1
                         if ret:
                             visual.resize(capW, capH, video)
+                            visual.video = cv2.copyMakeBorder(visual.video, 0, bottom_margin, 0, right_margin, cv2.BORDER_CONSTANT, value=[255,255, 255])
+                            # visual.CountTime()
+                            
+
                             try:
                                 ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
-                                print(f"합성 중... {count}")
-                                print(ecu_data)
+                                
+                                # print(f"합성 중... {count}")
+                                #print(ecu_data)
+
                                 if camera_1sec_frame_sum == count:
                                     data_jump = 0
                                     count = 0
                                     i += 1
-                                
+
                                 random_value += (random.randint(-3, 3))
                                 visual.board_graphic(40, r= 250, g=240, b=230 )
+                                visual.borad_data(ecu_data, data_jump, time_jump, before_data)
+
                                 try:
-                                    visual.borad_data(ecu_data, data_jump, time_jump)
+                                    if data_jump == 0:
+                                        print("헨들 에러") if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=before_data["s_angle"] , handleImg=handleImg)
+                                    else:
+                                        print("헨들 에러") if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=int(list(ecu_data[688.0]["s_angle"])[data_jump + time_jump]), handleImg=handleImg)
+                                        before_data["s_angle"] = int(list(ecu_data[688.0]["s_angle"])[data_jump + time_jump])
                                 except:
-                                    pass
+                                    print("헨들 에러") if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=before_data["s_angle"] , handleImg=handleImg)
+
                                 try:
-                                    print() if ecu_data[688.0].empty else visual.handleImageToVideo(random_value=list(ecu_data[688.0]["s_angle"])[data_jump + time_jump], handleImg=handleImg)
+                                    if data_jump == 0:
+                                        print() if ecu_data[809.0].empty else visual.graph_show(visual.video, before_data["PV_AC_CAN"], before_data["break_PRES"])
+                                    else:    
+                                        print() if ecu_data[809.0].empty else visual.graph_show(visual.video, list(ecu_data[809.0]["PV_AC_CAN"])[data_jump + time_jump], list(ecu_data[544.0]["break_PRES"])[data_jump + time_jump])
+                                        before_data["PV_AC_CAN"] = list(ecu_data[809.0]["PV_AC_CAN"])[data_jump + time_jump]
+                                        before_data["break_PRES"] = list(ecu_data[544.0]["break_PRES"])[data_jump + time_jump]
                                 except:
-                                    pass
-                                try:
-                                    print() if ecu_data[809.0].empty else visual.graph_show(visual.video, list(ecu_data[809.0]["PV_AC_CAN"])[data_jump + time_jump], "PV_AC_CAN")
-                                except:
-                                    pass
-                                try:
-                                    print() if ecu_data[544.0].empty else visual.graph_show(visual.video, list(ecu_data[544.0]["break_PRES"])[data_jump + time_jump], "break_PRES")
-                                except:
-                                    pass                                
+                                    print() if ecu_data[809.0].empty else visual.graph_show(visual.video, before_data["PV_AC_CAN"], before_data["break_PRES"])
+
+                                                           
                                 save_file.write(visual.video)
+                                print("time jump" , time_jump)
+                                cv2.imshow("video", visual.video) # 화면에 표시  --- ③
+                                cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
                                 data_jump = data_jump + time_jump
-                                print("data jump + time jump" , data_jump, time_jump)
+
                             except:
                                 print("index error")
-                                index_error += 1
-                                pass
                                 save_file.write(visual.video)
-                                # cv2.imshow("video", visual.video) # 화면에 표시  --- ③
-                                #cv2.waitKey(1)            # 25ms 지연(40fps로 가정)   --- ④
+                                # cv2.imshow("video",data_jump = data_jump + time_jump visual.video) # 화면에 표시  --- ③
                         else:                       # 다음 프레임 읽을 수 없슴,
                             cap.release()
                             save_file.release()
@@ -424,9 +457,18 @@ def streamVideo():
     global send_variable
     capW = 640
     capH = 480
+
+    window_width = 640
+    window_height = 600
+
+
+    right_margin = window_width - capW
+    bottom_margin = window_height - capH
+
+
     fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
     # fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    cap = cv2.VideoCapture(1)              # 0번 카메라 장치 연결 ---①, 1번은 웹캠
+    cap = cv2.VideoCapture(0)              # 0번 카메라 장치 연결 ---①, 1번은 웹캠
     duration = 30 #녹화 시간
     fps = 12.3
     print(fps)
@@ -435,17 +477,17 @@ def streamVideo():
         count = 0
         count_list = []
         time_list = []
-        #temp = time.time() - 1717054130
-        #if a == 0:
+        # temp = time.time() - 1717054130
+        # if a == 0:
         #     timestamp = 1717054130
         #     # timestamp를 이용해 datetime 객체를 생성합니다.
         #     now = datetime.datetime.fromtimestamp(timestamp)
         #     now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
         #     a += 1
-        #else:
-        visual = Visual()
+        # else:
         now = datetime.datetime.now()
         now = now.strftime("%Yy_%mm_%dd_%Hh_%Mm_%Ss")
+        visual = Visual()
         out = cv2.VideoWriter(f"../camera/camera/{now}.mp4",fourcc, fps,(capW, capH))
         if cap.isOpened():
             print(now)
@@ -456,8 +498,9 @@ def streamVideo():
                 if ret:
                     print(count)
                     visual.resize(capW, capH, img)
+                    # visual.video = cv2.copyMakeBorder(visual.video, 0, bottom_margin, 0, right_margin, cv2.BORDER_CONSTANT, value=[255,255, 255])
                     count_list.append(count)
-                    #time_list.append(int(time.time())- temp)
+                    # time_list.append(int(time.time())- temp)
                     time_list.append(int(time.time()))
                     visual.CountTime()
 
@@ -504,31 +547,30 @@ def handle_exit(client_socket):
 
 
 if __name__ == "__main__":
-    host = '192.168.64.187'
+    host = '192.168.194.187'
     port = 12345
-    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # client_socket.connect((host, port))
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((host, port))
     send_queue = queue.Queue()
-    # atexit.register(handle_exit, client_socket)
+    atexit.register(handle_exit, client_socket)
 
-    # thread = threading.Thread(target=streamVideo)
-    # thread.daemon = True
-    # thread.start()
+   
+   
     
-    driveVideo = "./source/drive.mp4"
-    startVideo_old(driveVideo)    
+    # driveVideo = "./source/drive.mp4"
+    # startVideo_old(driveVideo)    
     
-    # thread3 = threading.Thread(target=startVideo)
-    # thread3.daemon = True
-    # thread3.start()
+    thread3 = threading.Thread(target=startVideo)
+    thread3.daemon = True
+    thread3.start()
     
-    # thread4 = threading.Thread(target=send_function)
-    # thread4.daemon = True
-    # thread4.start()
+    thread4 = threading.Thread(target=send_function)
+    thread4.daemon = True
+    thread4.start()
     
-    # thread2 = threading.Thread(target=can_net)
-    # thread2.daemon = True
-    # thread2.start()
+    thread4 = threading.Thread(target=can_net)
+    thread4.daemon = True
+    thread4.start()
     
     while True:
        time.sleep(3)
