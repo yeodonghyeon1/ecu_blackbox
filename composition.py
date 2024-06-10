@@ -324,9 +324,13 @@ def startVideo():
                                 except:
                                     pass
                                 try:
-                                    print() if ecu_data[790.0].empty else visual.graph_show(visual.video, list(ecu_data[790.0]["RPM"])[data_jump + time_jump])
+                                    print() if ecu_data[809.0].empty else visual.graph_show(visual.video, list(ecu_data[809.0]["PV_AC_CAN"])[data_jump + time_jump], "PV_AC_CAN")
                                 except:
                                     pass
+                                try:
+                                    print() if ecu_data[544.0].empty else visual.graph_show(visual.video, list(ecu_data[544.0]["break_PRES"])[data_jump + time_jump], "break_PRES")
+                                except:
+                                    pass                                
                                 save_file.write(visual.video)
                                 data_jump = data_jump + time_jump
                                 print("data jump + time jump" , data_jump, time_jump)
@@ -360,7 +364,7 @@ def startVideo_old(video_file):
     cap = cv2.VideoCapture(video_file) # 동영상 캡쳐 객체 생성  ---①
     capW = 640
     capH = 480
-    window_width = 800
+    window_width = 640
     window_height = 600
 
 
@@ -422,7 +426,7 @@ def streamVideo():
     capH = 480
     fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
     # fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    cap = cv2.VideoCapture(0)              # 0번 카메라 장치 연결 ---①, 1번은 웹캠
+    cap = cv2.VideoCapture(1)              # 0번 카메라 장치 연결 ---①, 1번은 웹캠
     duration = 30 #녹화 시간
     fps = 12.3
     print(fps)
@@ -502,29 +506,29 @@ def handle_exit(client_socket):
 if __name__ == "__main__":
     host = '192.168.64.187'
     port = 12345
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((host, port))
+    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # client_socket.connect((host, port))
     send_queue = queue.Queue()
-    atexit.register(handle_exit, client_socket)
+    # atexit.register(handle_exit, client_socket)
 
     # thread = threading.Thread(target=streamVideo)
     # thread.daemon = True
     # thread.start()
     
     driveVideo = "./source/drive.mp4"
-    # startVideo_old(driveVideo)    
+    startVideo_old(driveVideo)    
     
-    thread3 = threading.Thread(target=startVideo)
-    thread3.daemon = True
-    thread3.start()
+    # thread3 = threading.Thread(target=startVideo)
+    # thread3.daemon = True
+    # thread3.start()
     
-    thread4 = threading.Thread(target=send_function)
-    thread4.daemon = True
-    thread4.start()
+    # thread4 = threading.Thread(target=send_function)
+    # thread4.daemon = True
+    # thread4.start()
     
-    thread2 = threading.Thread(target=can_net)
-    thread2.daemon = True
-    thread2.start()
+    # thread2 = threading.Thread(target=can_net)
+    # thread2.daemon = True
+    # thread2.start()
     
     while True:
        time.sleep(3)
