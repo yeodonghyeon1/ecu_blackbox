@@ -13,7 +13,7 @@ import socket
 import datetime
 import pandas as pd
 import re
-from pi.can import can_net
+from pi.car import can_net
 import atexit
 import time
 from unittest.mock import patch
