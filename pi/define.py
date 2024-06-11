@@ -43,8 +43,11 @@ def PV_AV_CAN(PV): #엑셀계패량 계산
 def break_val(val): # 브레이크 바 계산
    f_scale = 0.1
    f_offset = 0.0
-   result = f_offset + f_scale * val
-   result=floor_to(result)
+   mask = 0xfff
+   val=val^mask
+   result = f_offset + f_scale * val 
+   result=min(floor_to(result),100)
+   print(result)
    return result
 
 def floor_to(value):
@@ -97,11 +100,11 @@ def process_data(message, data, file):
        EMS12_CONF_TCU = extract_bits(data, 26, 28) # 기어박스 유형
        csv_writer.writerow({'time': message.timestamp, 'ID': message.arbitration_id, 'eng_temp': EMS12_TEMP_ENG, 'break_on_off': EMS12_BRAKE, 'TPS': EMS12_TPS, 'PV_AC_CAN': EMS12_PV_AC_CAN, 'CONF_TCU': EMS12_CONF_TCU})
    elif message.arbitration_id == ESP12:
-       ESP12_CYL_PRES_1 = extract_bits(data, 24, 31) # 브레이크 바
-       ESP12_CYL_PRES_2 = extract_bits(data, 32, 39)
+       ESP12_CYL_PRES_1 = extract_bits(data, 32, 39) # 브레이크 바
+       ESP12_CYL_PRES_2 = extract_bits(data, 44, 47)
        ESP12_CYL_PRES_s = bits_puls(ESP12_CYL_PRES_1, ESP12_CYL_PRES_2)
-       ESP12_CYL_PRES_t = extract_bits_break(ESP12_CYL_PRES_s)
-       ESP12_CYL_PRES = break_val(ESP12_CYL_PRES_t)
+       #ESP12_CYL_PRES_t = extract_bits_break(ESP12_CYL_PRES_s)
+       ESP12_CYL_PRES = break_val(ESP12_CYL_PRES_s)
        csv_writer.writerow({'time': message.timestamp, 'ID': message.arbitration_id, 'break_PRES': ESP12_CYL_PRES})
    elif message.arbitration_id == TCU12:
        TCU12_CUR_GR = extract_bits(data, 12, 15) # 변속기
