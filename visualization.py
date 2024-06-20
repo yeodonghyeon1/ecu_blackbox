@@ -27,6 +27,8 @@ class Visual:
         cv2.rectangle(self.video, (0, board_value+3), (self.capW, self.capH-3), (r+240, g+255, b+240), -1)
         cv2.rectangle(self.video, (0, board_value+4), (self.capW, self.capH-4), (r+255, g+228, b+225), -1)
         cv2.rectangle(self.video, (0, board_value+5), (self.capW, self.capH-5), (r+122, g+122, b+122), -1)
+        cv2.rectangle(self.video, (0, board_value-10), (self.capW, self.capH-5), (r+122, g+122, b+122), -1)
+
         cv2.rectangle(self.video, (10, board_value + 5), (int(self.capW/4), self.capH-5), (r, g, b), -1)
         
 
@@ -39,6 +41,12 @@ class Visual:
         # self.board_text("axcel", int((10+int(self.capW/4))), board_value+30, 0,255,0)
         # self.board_text("press", int((170+int(self.capW/4))), board_value+30, 0,255,0)
         # self.board_text("gear", int((340+int(self.capW/4))), board_value+30, 0,255,0)
+
+        cv2.putText(self.video, str("CUR_GR"), (int((330+int(self.capW/4))), self.board_value2-1), cv2.FONT_HERSHEY_TRIPLEX  , 0.4, (0,0,0))
+        cv2.putText(self.video, str("VS"), (int((170+int(self.capW/4))), self.board_value2-1), cv2.FONT_HERSHEY_TRIPLEX, 0.4, (0,0,0))
+        cv2.putText(self.video, str("RPM"), (int((10+int(self.capW/4))), self.board_value2-1), cv2.FONT_HERSHEY_TRIPLEX, 0.4, (0,0,0))
+        cv2.putText(self.video, str("eng_temp"), (int((-150+int(self.capW/4))), self.board_value2-1), cv2.FONT_HERSHEY_TRIPLEX, 0.4, (0,0,0))
+   
     def handleImageToVideo(self, random_value, handleImg):
         handleImg = cv2.resize(handleImg, (120, 120))
         
@@ -61,6 +69,40 @@ class Visual:
         added = masked_img + masked_video
         self.video[480:480+h, 10:10+w] = added
     
+    def rpm(self, random_value, rpmImg):
+        rpmImg = cv2.resize(rpmImg, (120, 120))
+        
+        h, w = rpmImg.shape[:2]
+        # (cX, cY) = (w // 2, h // 2)
+        # M = cv2.getRotationMatrix2D((cX, cY), random_value, 1.0)
+        # rpmImg = cv2.warpAffine(rpmImg, M, (w, h))
+        _, mask = cv2.threshold(rpmImg[:,:,3] , 1 ,255, cv2.THRESH_BINARY)
+        mask_inv = cv2.bitwise_not(mask)
+        roi = self.video[480:480+h , 10:10+w]
+        rpmImg = cv2.cvtColor(rpmImg, cv2.COLOR_BGRA2BGR)
+
+        masked_img = cv2.bitwise_and(rpmImg, rpmImg, mask=mask)
+        masked_video = cv2.bitwise_and(roi, roi, mask=mask_inv)
+        added = masked_img + masked_video
+        self.video[480:480+h, 10:10+w] = added
+        # h, w = rpmImg.shape[:2]
+        # (cX, cY) = (w // 2, h // 2)
+        
+        # M = cv2.getRotationMatrix2D((cX, cY), random_value, 1.0)
+        # rpmImg = cv2.warpAffine(rpmImg, M, (w, h))
+
+
+        # _, mask = cv2.threshold(rpmImg[:,:,3] , 1 ,255, cv2.THRESH_BINARY)
+        # # print(mask.shape)
+        # mask_inv = cv2.bitwise_not(mask)
+        # roi = self.video[480:480+h , 10:10+w]
+        # handleImg = cv2.cvtColor(rpmImg, cv2.COLOR_BGRA2BGR)
+        # masked_img = cv2.bitwise_and(handleImg, handleImg, mask=mask)
+        # masked_video = cv2.bitwise_and(roi, roi, mask=mask_inv)
+        
+        # added = masked_img + masked_video
+        # self.video[480:480+h, 10:10+w] = added
+    
     def borad_data(self, ecu_data, data_jump, time_jump, before_data):
 
         #1 box
@@ -80,7 +122,7 @@ class Visual:
         #2 box
         try:
             if data_jump == 0:
-                print() if ecu_data[790.0].empty else self.board_text(libefore_data["VS"],
+                print() if ecu_data[790.0].empty else self.board_text(before_data["VS"],
                                                                         int((170+int(self.capW/4))), 
                                                                         self.board_value2+30, 0,255,0)
             else:

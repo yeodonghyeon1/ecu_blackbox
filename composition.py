@@ -398,6 +398,7 @@ def startVideo():
 #합성 영상만 확인하는 함수
 def startVideo_old(video_file):
     handleImg = cv2.imread("./source/handle.png", cv2.IMREAD_UNCHANGED)
+    rpm_0 = cv2.imread("./source/rpm_0.png", cv2.IMREAD_UNCHANGED)
     cap = cv2.VideoCapture(video_file) # 동영상 캡쳐 객체 생성  ---①
     capW = 640
     capH = 480
@@ -420,12 +421,12 @@ def startVideo_old(video_file):
 
                 visual.resize(capW, capH, video)
                 visual.video = cv2.copyMakeBorder(visual.video, 0, bottom_margin, 0, right_margin, cv2.BORDER_CONSTANT, value=[255,255, 255])
-
                 random_value += (random.randint(-3, 3))
                 visual.board_graphic(40, r= 250, g=240, b=230 )
                 visual.handleImageToVideo(random_value=random_value, handleImg=handleImg)
+                # visual.rpm(random_value=random_value, rpmImg=rpm_0)
                 visual.CountTime()
-                visual.graph_show(visual.video, random_value)
+                visual.graph_show(visual.video, random_value,random_value)
                 save_file.write(visual.video)
                 cv2.imshow(video_file, visual.video) # 화면에 표시  --- ③
                 cv2.waitKey(30)            # 25ms 지연(40fps로 가정)   --- ④
@@ -561,7 +562,7 @@ if __name__ == "__main__":
    
    
     
-    # driveVideo = "./source/drive.mp4"
+    # driveVideo = "./source/2024y_05m_30d_16h_28m_50s.mp4"
     # startVideo_old(driveVideo)    
     
     thread3 = threading.Thread(target=startVideo)
