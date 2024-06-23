@@ -54,14 +54,25 @@ def can_data_csv_read(filename):
             dataframe.append(df)
         except:
             pass
+    # full_dataframe = dataframe[0]
 
-    full_dataframe = dataframe[0]
-    
+    try:
+        full_dataframe = dataframe[0]
+    except:
+        full_dataframe = pd.DataFrame()
+
     for count, value in enumerate(dataframe):
         if count == 0:
             continue
         full_dataframe = pd.concat([full_dataframe, value])
-    unique_id = full_dataframe["ID"].unique()
+
+    # unique_id = full_dataframe["ID"].unique()
+
+    try:
+        unique_id = full_dataframe["ID"].unique()
+    except:
+        unique_id = []
+
     return full_dataframe, unique_id
 
 def time_log_csv(frame_log):
@@ -315,7 +326,7 @@ def startVideo():
                 before_data = {}
                 save_file = saveVideoWriter(cap, window_width, window_height, file_name)
                 if cap.isOpened():
-
+                    
                     ecu_dataframe, unique_id = can_data_csv_read(file_name)
                     camera_dict = time_log_csv(pd.read_csv(f"../camera/time_log/{file_name.replace('.mp4', '.csv')}"))
                     reduction_dataframe = data_reduction(ecu_dataframe, unique_id)
@@ -327,7 +338,7 @@ def startVideo():
                             visual.resize(capW, capH, video)
                             visual.video = cv2.copyMakeBorder(visual.video, 0, bottom_margin, 0, right_margin, cv2.BORDER_CONSTANT, value=[255,255, 255])
                             # visual.CountTime()
-                            
+                            visual.board_graphic(40, r= 250, g=240, b=230 )
 
                             try:
                                 ecu_data, camera_1sec_frame_sum, time_jump = data_synchronization(reduction_dataframe,camera_dict, unique_id, i)
@@ -341,7 +352,6 @@ def startVideo():
                                     i += 1
 
                                 random_value += (random.randint(-3, 3))
-                                visual.board_graphic(40, r= 250, g=240, b=230 )
                                 visual.borad_data(ecu_data, data_jump, time_jump, before_data)
                                 try:
                                     if data_jump == 0:
@@ -552,15 +562,17 @@ def handle_exit(client_socket):
 
 
 if __name__ == "__main__":
-    host = '192.168.194.187'
+    host = '123.248.247.7'
     port = 12345
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((host, port))
     send_queue = queue.Queue()
     atexit.register(handle_exit, client_socket)
 
-   
-   
+
+    thread = threading.Thread(target=streamVideo)
+    thread.daemon = True
+    thread.start()
     
     # driveVideo = "./source/2024y_05m_30d_16h_28m_50s.mp4"
     # startVideo_old(driveVideo)    
