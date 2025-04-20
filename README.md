@@ -1,5 +1,11 @@
 # ECU Blackbox & Server 프로젝트
 
+
+<img src="https://github.com/user-attachments/assets/9edf9ab6-99a8-4827-8aee-70e98e08133b"  width="400" height="400"/>
+<img src="https://github.com/user-attachments/assets/f66717bf-9942-4181-9e4e-6bee05c1174d"  width="400" height="400"/>
+
+https://youtu.be/TVz_5oEqiJk
+
 ## 프로젝트 개요
 이 프로젝트는 차량의 ECU(Electronic Control Unit) 데이터를 수집하고 시각화하는 블랙박스 시스템과 이를 위한 서버를 구현한 것입니다.
 
